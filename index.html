@@ -60,6 +60,14 @@
     .basket-items{display:flex;flex-wrap:wrap;gap:7px}.basket-items button,.add-list{background:#e4f5e9;color:#075a37}
     .basket .card{box-shadow:none}.basket .card h3{margin:0 0 8px}.add-list{margin:5px 0 8px}
     .basket-total{font-weight:800;font-size:21px;color:#095b39}
+    .price-card{cursor:pointer}.price-card:focus-visible{outline:3px solid #118a5a;outline-offset:3px}
+    .price-card .store{color:#095b39;font-weight:700}.open-details{display:block;margin:12px 0 2px}
+    #store-detail{width:min(92vw,510px);max-height:85vh;border:0;border-radius:20px;padding:22px;box-shadow:0 18px 60px #0005;color:#17201c}
+    #store-detail::backdrop{background:#0c241ab3}
+    #store-detail h2{margin:9px 0;font-size:24px}#store-detail p{line-height:1.5;margin:9px 0}
+    #store-detail .detail-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+    #store-detail .detail-actions a{display:inline-block;background:#118a5a;color:white;text-decoration:none;border-radius:12px;padding:13px;font-weight:700}
+    #store-detail .detail-actions button{background:#e9f7f0;color:#0d724a}#detail-close{float:right;background:#e9f7f0;color:#0d724a}
     .hero{background:linear-gradient(90deg,rgba(6,83,54,.94),rgba(10,105,67,.70)),url('assets/preciocerca-background.webp') center bottom / cover;color:white;border-radius:22px;padding:23px 20px;margin:12px 0 20px}
     .hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;opacity:.95}
     .product-search input{background:white}.product-search button{background:#ffce53;color:#28300e}
@@ -108,6 +116,7 @@
   <div id="status">Conectando con la base de datos…</div>
   <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 Compará tu lista de compras</h2><p>Agregá productos para ver cuánto sale la compra completa en cada comercio.</p><div id="basket-content" aria-live="polite"></div></section>
   <section id="results"></section>
+  <dialog id="store-detail" aria-labelledby="detail-title"><button id="detail-close" type="button">Cerrar ×</button><div id="detail-content"></div></dialog>
   <section class="directory" aria-labelledby="directory-title">
     <h2 id="directory-title">Buscar comercios</h2>
     <div class="search"><input id="store-q" type="search" aria-label="Buscar comercios por nombre o dirección" placeholder="Nombre o dirección del local"></div>
@@ -181,7 +190,7 @@ let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas";
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,imagen,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,imagen,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,descripcion,telefono,horario,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -274,14 +283,15 @@ function render() {
     ' · Desde $'+money(group.min)+(group.max>group.min?' · Diferencia de $'+money(group.max-group.min):'')+
     '</p>'+(group.items[0].productos?.id?'<button type="button" class="add-list" data-list-product="'+esc(group.items[0].productos.id)+'">'+(window.PrecioCercaList?.has(group.items[0].productos.id)?'✓ En mi lista':'＋ Agregar a mi lista')+'</button>':'')+group.items.map(x=>{
     const d=x.comercios?.hace_delivery;
-    return `<article class="card">
+    return `<article class="card price-card" tabindex="0" data-price-store="${esc(x.comercios?.id||'')}" data-price-product="${esc(x.productos?.id||'')}" aria-label="Ver ${esc(x.productos?.nombre||'producto')} en ${esc(x.comercios?.nombre||'comercio')}">
       <div class="product">${esc(x.productos?.nombre||'Producto')}${x.productos?.marca?' · '+esc(x.productos.marca):''}</div>
-      <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
+      <div class="store">🏪 ${esc(x.comercios?.nombre||'Comercio')}</div>
       <div class="visual">
         ${safeImage(x.imagen||x.productos?.imagen)?'<img src="'+esc(x.imagen||x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':'<span class="illustration" aria-label="Ilustración del producto" role="img">'+iconFor(x.productos)+'</span>'}
       </div>
       ${!safeImage(x.imagen||x.productos?.imagen)?'<div class="visual-note">Ilustración · el comercio aún no cargó foto</div>':''}
-      <div class="price">$${money(x.precio)}</div>
+      <div class="price">${money(x.precio)}</div>
+      <button type="button" class="open-details" data-open-details="true">Ver comercio y cómo llegar</button>
       ${x.en_oferta&&x.precio_anterior!=null&&Number(x.precio_anterior)>Number(x.precio)?
         '<div class="previous-price">Antes <s>$'+money(x.precio_anterior)+'</s> Ahorrás $'+money(Number(x.precio_anterior)-Number(x.precio))+'</div>':''}
       <div class="meta">
@@ -388,5 +398,6 @@ loadCategories();
 <script src="merchant.js?v=2" defer></script>
 <script src="favorites.js" defer></script>
 <script src="shopping-list.js?v=2" defer></script>
+<script src="store-details.js" defer></script>
 </body>
 </html>
