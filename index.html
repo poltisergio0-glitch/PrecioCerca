@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#16a36a">
+  <meta name="theme-color" content="#118a5a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <title>PrecioCerca</title>
   <style>
     *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f5f7f6;color:#17201c}
@@ -33,6 +36,8 @@
     #favorites-filter[hidden]{display:none}
     #favorites-message{font-size:14px;color:#43544a}
     .contact{display:inline-block;margin-top:12px;color:#08764b;font-weight:700}
+    .install{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    .install span{font-size:13px;color:#56625c}
     .empty{text-align:center;padding:35px 10px;color:#65716b}
   </style>
 </head>
@@ -40,6 +45,7 @@
 <header><div class="brand">PrecioCerca</div><div class="tag">Compará antes de comprar</div></header>
 <main>
   <h1>¿Qué estás buscando?</h1>
+  <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
   <section class="account" aria-labelledby="account-title">
     <h2 id="account-title">Tu cuenta</h2>
     <div id="auth-out">
@@ -192,6 +198,26 @@ document.getElementById('nearby').onclick=()=>{
     {enableHighAccuracy:true,timeout:15000,maximumAge:60000}
   );
 };
+let installPrompt=null;
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  installPrompt=event;
+});
+document.getElementById('install-app').addEventListener('click', async () => {
+  const info=document.getElementById('install-message');
+  if (installPrompt) {
+    const prompt=installPrompt; installPrompt=null;
+    await prompt.prompt();
+    const choice=await prompt.userChoice;
+    info.textContent=choice.outcome==='accepted' ? 'Instalación iniciada.' : 'Podés instalarla más tarde desde el menú de Chrome.';
+  } else {
+    info.textContent='En Chrome, tocá ⋮ y elegí “Instalar aplicación” o “Agregar a pantalla principal”.';
+  }
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-app').hidden=true;
+  document.getElementById('install-message').textContent='PrecioCerca instalada.';
+});
 window.addEventListener('preciocerca:prices-updated',load);
 window.addEventListener('preciocerca:favorites-updated',render);
 load();
