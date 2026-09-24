@@ -4,6 +4,14 @@
   const $ = id => document.getElementById(id);
   let stores = [], pendingLocation = null;
   function message(text) { $('merchant-message').textContent = text; }
+  function fillEditForm() {
+    const store = stores.find(item => item.id === $('merchant-edit-store').value);
+    $('merchant-edit-name').value = store?.nombre || '';
+    $('merchant-edit-address').value = store?.direccion || '';
+    $('merchant-edit-whatsapp').value = store?.whatsapp || '';
+    $('merchant-edit-delivery').checked = Boolean(store?.hace_delivery);
+    $('merchant-edit-delivery-cost').value = store?.hace_delivery ? store.costo_delivery ?? 0 : '';
+  }
   async function api(path, options = {}) {
     const session = await window.PrecioCercaAuth.getSession();
     if (!session) throw new Error('Ingresá a tu cuenta para administrar un comercio.');
@@ -21,19 +29,55 @@
   async function refresh() {
     const session = await window.PrecioCercaAuth.getSession();
     $('merchant-panel').hidden = !session;
-    if (!session) { stores = []; return; }
+    if (!session) { stores = []; $('merchant-edit-store').value = ''; fillEditForm(); return; }
     try {
       const prior = $('merchant-store').value;
-      stores = await api('/comercios?select=id,nombre&activo=eq.true&propietario_id=eq.' + encodeURIComponent(session.user.id) + '&order=nombre.asc');
+      const priorEdit = $('merchant-edit-store').value;
+      stores = await api('/comercios?select=id,nombre,direccion,whatsapp,hace_delivery,costo_delivery,latitud,longitud&activo=eq.true&propietario_id=eq.' + encodeURIComponent(session.user.id) + '&order=nombre.asc');
       $('merchant-store').replaceChildren(new Option('Elegí un local', ''));
       stores.forEach(store => $('merchant-store').add(new Option(store.nombre, store.id)));
       if (stores.some(store => store.id === prior)) $('merchant-store').value = prior;
+      $('merchant-edit-store').replaceChildren(new Option('Elegí un local para editar', ''));
+      stores.forEach(store => $('merchant-edit-store').add(new Option(store.nombre, store.id)));
+      if (stores.some(store => store.id === priorEdit)) $('merchant-edit-store').value = priorEdit;
+      fillEditForm();
       const products = await api('/productos?select=id,nombre,marca&activo=eq.true&order=nombre.asc');
       $('merchant-product').replaceChildren(new Option('Nuevo producto', ''));
       products.forEach(product => $('merchant-product').add(new Option(product.nombre + (product.marca ? ' · ' + product.marca : ''), product.id)));
       message(stores.length ? 'Elegí tu local para cargar un precio.' : 'Registrá tu local para comenzar.');
     } catch (error) { message(error.message); }
   }
+  $('merchant-edit-store').addEventListener('change', fillEditForm);
+  $('merchant-edit-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = $('merchant-edit-save'); button.disabled = true;
+    try {
+      const storeId = $('merchant-edit-store').value;
+      const original = stores.find(store => store.id === storeId);
+      if (!original) throw new Error('Elegí un local propio para editar.');
+      const nombre = $('merchant-edit-name').value.trim();
+      const direccion = $('merchant-edit-address').value.trim();
+      const whatsapp = $('merchant-edit-whatsapp').value.replace(/\D/g, '');
+      const delivery = $('merchant-edit-delivery').checked;
+      const cost = Number($('merchant-edit-delivery-cost').value || 0);
+      if (!nombre) throw new Error('Escribí el nombre del comercio.');
+      if (!direccion && (original.latitud == null || original.longitud == null))
+        throw new Error('Escribí la dirección o actualizá el GPS del local.');
+      if (whatsapp && (whatsapp.length < 8 || whatsapp.length > 15))
+        throw new Error('Escribí WhatsApp con código de país y solo números.');
+      if (!Number.isFinite(cost) || cost < 0) throw new Error('Ingresá un costo de delivery válido.');
+      const updated = await api('/comercios?id=eq.' + encodeURIComponent(storeId), {
+        method: 'PATCH',
+        body: { nombre, direccion, whatsapp: whatsapp || null,
+          hace_delivery: delivery, costo_delivery: delivery ? cost : 0 }
+      });
+      if (!updated.length) throw new Error('No se pudo actualizar el local. Volvé a intentarlo.');
+      await refresh();
+      message('Datos del local actualizados.');
+      window.dispatchEvent(new Event('preciocerca:prices-updated'));
+    } catch (error) { message(error.message); }
+    finally { button.disabled = false; }
+  });
   function getPosition() {
     if (!navigator.geolocation) return Promise.reject(new Error('Este navegador no permite obtener la ubicación.'));
     return new Promise((resolve, reject) =>
@@ -100,6 +144,8 @@
       $('merchant-new-gps-status').textContent = 'Opcional. Hacelo cuando estés en el local.';
       await refresh();
       $('merchant-store').value = result[0].id;
+      $('merchant-edit-store').value = result[0].id;
+      fillEditForm();
       message('Local registrado. Ya podés cargar productos.');
     } catch (error) { message(error.message); }
     finally { button.disabled = false; }
