@@ -34,6 +34,27 @@
       message(stores.length ? 'Elegí tu local para cargar un precio.' : 'Registrá tu local para comenzar.');
     } catch (error) { message(error.message); }
   }
+  $('merchant-geolocate').addEventListener('click', async () => {
+    const storeId = $('merchant-store').value;
+    if (!stores.some(store => store.id === storeId)) { message('Elegí tu local primero.'); return; }
+    if (!navigator.geolocation) { message('Este navegador no permite obtener la ubicación.'); return; }
+    const button = $('merchant-geolocate'); button.disabled = true;
+    message('Buscando la ubicación del local…');
+    try {
+      const position = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject,
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }));
+      if (position.coords.accuracy > 1000)
+        throw new Error('La ubicación es poco precisa. Activá el GPS e intentá nuevamente.');
+      await api('/comercios?id=eq.' + encodeURIComponent(storeId), { method: 'PATCH',
+        body: { latitud: position.coords.latitude, longitud: position.coords.longitude } });
+      message('Ubicación guardada. La distancia será aproximada en línea recta.');
+      window.dispatchEvent(new Event('preciocerca:prices-updated'));
+    } catch (error) {
+      message(error.code === 1 ? 'Permití la ubicación en el navegador para continuar.' :
+        (error.message || 'No se pudo obtener la ubicación.'));
+    } finally { button.disabled = false; }
+  });
   $('merchant-store-form').addEventListener('submit', async event => {
     event.preventDefault();
     const button = $('merchant-store-save'); button.disabled = true;
