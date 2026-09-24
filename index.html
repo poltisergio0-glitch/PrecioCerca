@@ -165,7 +165,7 @@
 const SUPABASE_URL='https://kgrnpypzounvgphjdrjg.supabase.co';
 const KEY='sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
 const statusEl=document.getElementById('status'), results=document.getElementById('results');
-let rows=[], userLocation=null, selectedCategory="Todas";
+let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas";
 
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
@@ -184,7 +184,7 @@ async function load() {
   }
 }
 
-const categoryIcons={'Almacén':'🛒','Bebidas':'🥤','Lácteos':'🥛','Carnes':'🥩','Limpieza':'🧽','Higiene':'🧴'};
+const categoryIcons={'Almacén':'🛒','Bebidas':'🥤','Lácteos':'🥛','Carnes':'🥩','Limpieza':'🧽','Higiene':'🧴','Frutas y verduras':'🥬','Panadería':'🥖','Congelados':'🧊','Mascotas':'🐾','Bebés':'🍼','Hogar':'🏠','Electrónica':'📱','Ferretería':'🔧','Ropa':'👕','Otros':'🛍️'};
 function iconFor(product){
   const name=(product?.nombre||'').toLocaleLowerCase('es-AR');
   if(/arroz/.test(name))return '🍚';
@@ -193,9 +193,16 @@ function iconFor(product){
   if(/manteca|mantequilla/.test(name))return '🧈';
   return categoryIcons[product?.categorias?.nombre]||'🛍️';
 }
+async function loadCategories(){
+  try {
+    const response=await fetch(SUPABASE_URL+'/rest/v1/categorias?select=nombre&order=nombre.asc',{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+    if(!response.ok) throw new Error(await response.text());
+    categoryNames=(await response.json()).map(x=>x.nombre);
+    renderCategories();
+  } catch(error){console.error('No se pudieron cargar las categorías.',error)}
+}
 function renderCategories(){
-  const names=['Todas',...new Set(rows.map(row=>row.productos?.categorias?.nombre).filter(Boolean))];
-  for(const category of Object.keys(categoryIcons)) if(!names.includes(category)) names.push(category);
+  const names=['Todas',...new Set([...categoryNames,...rows.map(row=>row.productos?.categorias?.nombre).filter(Boolean)])];
   const list=document.getElementById('category-list');
   list.replaceChildren();
   for(const name of names){
@@ -232,7 +239,7 @@ function render() {
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
   if(!data.length) {
     statusEl.textContent='Sin resultados con esos filtros.';
-    results.innerHTML='<div class="empty">No encontramos productos con esa búsqueda y esos filtros.</div>';
+    results.innerHTML='<div class="empty">'+(selectedCategory!=='Todas'?'Todavía no hay productos de '+esc(selectedCategory)+' con esos filtros.':'No encontramos productos con esa búsqueda y esos filtros.')+'</div>';
     return;
   }
   const byProduct=new Map();
@@ -345,6 +352,7 @@ window.addEventListener('appinstalled', () => {
 window.addEventListener('preciocerca:prices-updated',()=>{load();window.loadStores?.()});
 window.addEventListener('preciocerca:favorites-updated',render);
 load();
+loadCategories();
 </script>
 <script src="stores.js" defer></script>
 <script src="auth.js" defer></script>
