@@ -51,13 +51,56 @@
     .directory{margin:22px 0}.directory h2{font-size:23px}.directory .search input{width:100%}
     .store-card h3{margin:0;font-size:19px}.store-card p{color:#56625c}
     .store-card .contact{margin-right:15px}#selected-store{margin:12px 0}
+    .hero{background:linear-gradient(135deg,#0d8051,#16aa70);color:white;border-radius:22px;padding:23px 20px;margin:12px 0 20px}
+    .hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;opacity:.95}
+    .product-search input{background:white}.product-search button{background:#ffce53;color:#28300e}
+    .category-list{display:flex;gap:9px;overflow-x:auto;padding:6px 1px 13px;scrollbar-width:thin}
+    .category-list button{background:white;color:#22563e;border:1px solid #d8e4da;white-space:nowrap;padding:9px 13px}
+    .category-list button[aria-pressed="true"]{background:#d5f2e1;color:#064a2e;border-color:#0e8b57}
+    .visual{display:flex;align-items:center;justify-content:center;min-height:170px;background:#f1f8ef;border-radius:13px;margin:12px 0 4px}
+    .visual img{width:100%;height:170px;max-height:none;margin:0;object-fit:contain}
+    .visual .illustration{font-size:78px;line-height:1}.visual-note{font-size:12px;color:#64716a;text-align:center;margin-top:3px}
+    .directory{border-top:1px solid #dce5df;padding-top:18px}
   </style>
 </head>
 <body>
 <header><div class="brand">PrecioCerca</div><div class="tag">Compará antes de comprar</div></header>
 <main>
-  <h1>¿Qué estás buscando?</h1>
+  <div class="hero"><h1>Encontrá el mejor precio cerca tuyo</h1><p>Buscá, compará y elegí dónde comprar.</p></div>
   <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
+  <section class="directory" aria-labelledby="directory-title">
+    <h2 id="directory-title">Buscar comercios</h2>
+    <div class="search"><input id="store-q" type="search" aria-label="Buscar comercios por nombre o dirección" placeholder="Nombre o dirección del local"></div>
+    <div id="store-status" role="status" aria-live="polite">Cargando comercios…</div>
+    <div id="store-results"></div>
+  </section>
+  <h2 id="products-title">Comparar productos</h2>
+  <div id="category-list" class="category-list" aria-label="Categorías de productos"></div>
+  <div id="selected-store" hidden></div>
+  <div class="search product-search"><input id="q" type="search" aria-label="Buscar productos" placeholder="Ej: arroz, leche, gaseosa"><button id="search">Buscar</button></div>
+  <div class="location"><button id="nearby" type="button">Usar mi ubicación</button><span id="distance-status">Activá tu ubicación para ver distancias.</span></div>
+  <select id="radius">
+    <option value="all">Cualquier distancia</option>
+    <option value="2">Hasta 2 km</option>
+    <option value="5">Hasta 5 km</option>
+    <option value="10">Hasta 10 km</option>
+  </select>
+  <select id="sort">
+    <option value="delivery">Menor total + delivery</option>
+    <option value="price">Menor precio</option>
+    <option value="name">Producto A–Z</option>
+    <option value="distance">Más cercanos</option>
+    <option value="updated">Actualizados más recientemente</option>
+  </select>
+  <div id="filters">
+    <label><input type="checkbox" id="only-offers"> Solo ofertas</label>
+    <label><input type="checkbox" id="only-delivery"> Con delivery</label>
+    <label><input type="checkbox" id="only-recent"> Actualizados en los últimos 7 días</label>
+  </div>
+  <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
+  <div id="favorites-message" role="status" aria-live="polite"></div>
+  <div id="status">Conectando con la base de datos…</div>
+  <section id="results"></section>
   <section class="account" aria-labelledby="account-title">
     <h2 id="account-title">Tu cuenta</h2>
     <div id="auth-out">
@@ -113,53 +156,22 @@
     </form>
     <div id="merchant-message" role="status" aria-live="polite"></div>
   </details>
-  <section class="directory" aria-labelledby="directory-title">
-    <h2 id="directory-title">Buscar comercios</h2>
-    <div class="search"><input id="store-q" type="search" aria-label="Buscar comercios por nombre o dirección" placeholder="Nombre o dirección del local"></div>
-    <div id="store-status" role="status" aria-live="polite">Cargando comercios…</div>
-    <div id="store-results"></div>
-  </section>
-  <h2 id="products-title">Comparar productos</h2>
-  <div id="selected-store" hidden></div>
-  <div class="search"><input id="q" placeholder="Ej: Coca-Cola, arroz, leche"><button id="search">Buscar</button></div>
-  <div class="location"><button id="nearby" type="button">Usar mi ubicación</button><span id="distance-status">Activá tu ubicación para ver distancias.</span></div>
-  <select id="radius">
-    <option value="all">Cualquier distancia</option>
-    <option value="2">Hasta 2 km</option>
-    <option value="5">Hasta 5 km</option>
-    <option value="10">Hasta 10 km</option>
-  </select>
-  <select id="sort">
-    <option value="delivery">Menor total + delivery</option>
-    <option value="price">Menor precio</option>
-    <option value="name">Producto A–Z</option>
-    <option value="distance">Más cercanos</option>
-    <option value="updated">Actualizados más recientemente</option>
-  </select>
-  <div id="filters">
-    <label><input type="checkbox" id="only-offers"> Solo ofertas</label>
-    <label><input type="checkbox" id="only-delivery"> Con delivery</label>
-    <label><input type="checkbox" id="only-recent"> Actualizados en los últimos 7 días</label>
-  </div>
-  <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
-  <div id="favorites-message" role="status" aria-live="polite"></div>
-  <div id="status">Conectando con la base de datos…</div>
-  <section id="results"></section>
 </main>
 <script>
 const SUPABASE_URL='https://kgrnpypzounvgphjdrjg.supabase.co';
 const KEY='sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
 const statusEl=document.getElementById('status'), results=document.getElementById('results');
-let rows=[], userLocation=null;
+let rows=[], userLocation=null, selectedCategory="Todas";
 
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,actualizado_at,productos(id,nombre,marca,imagen),comercios(id,nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
     statusEl.textContent='Conectado ✓';
+    renderCategories();
     render();
   } catch(e) {
     statusEl.textContent='No se pudo consultar la base de datos.';
@@ -168,10 +180,36 @@ async function load() {
   }
 }
 
+const categoryIcons={'Almacén':'🛒','Bebidas':'🥤','Lácteos':'🥛','Carnes':'🥩','Limpieza':'🧽','Higiene':'🧴'};
+function iconFor(product){
+  const name=(product?.nombre||'').toLocaleLowerCase('es-AR');
+  if(/arroz/.test(name))return '🍚';
+  if(/leche/.test(name))return '🥛';
+  if(/gaseosa|cola/.test(name))return '🥤';
+  if(/manteca|mantequilla/.test(name))return '🧈';
+  return categoryIcons[product?.categorias?.nombre]||'🛍️';
+}
+function renderCategories(){
+  const names=['Todas',...new Set(rows.map(row=>row.productos?.categorias?.nombre).filter(Boolean))];
+  for(const category of Object.keys(categoryIcons)) if(!names.includes(category)) names.push(category);
+  const list=document.getElementById('category-list');
+  list.replaceChildren();
+  for(const name of names){
+    const button=document.createElement('button');
+    button.type='button';button.textContent=(name==='Todas'?'✨':categoryIcons[name]||'🛍️')+' '+name;
+    button.setAttribute('aria-pressed',String(selectedCategory===name));
+    button.addEventListener('click',()=>{
+      selectedCategory=name;
+      list.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+      render();
+    });
+    list.append(button);
+  }
+}
 function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
-  let data=rows.filter(x => (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
+  let data=rows.filter(x => (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (selectedCategory==='Todas'||x.productos?.categorias?.nombre===selectedCategory) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
   if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta);
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   if(document.getElementById('only-recent').checked) {
@@ -214,7 +252,10 @@ function render() {
     return `<article class="card">
       <div class="product">${esc(x.productos?.nombre||'Producto')}${x.productos?.marca?' · '+esc(x.productos.marca):''}</div>
       <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
-      ${safeImage(x.productos?.imagen)?'<img src="'+esc(x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':''}
+      <div class="visual">
+        ${safeImage(x.productos?.imagen)?'<img src="'+esc(x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':'<span class="illustration" aria-label="Ilustración del producto" role="img">'+iconFor(x.productos)+'</span>'}
+      </div>
+      ${!safeImage(x.productos?.imagen)?'<div class="visual-note">Ilustración · el comercio aún no cargó foto</div>':''}
       <div class="price">$${money(x.precio)}</div>
       ${x.en_oferta&&x.precio_anterior!=null&&Number(x.precio_anterior)>Number(x.precio)?
         '<div class="previous-price">Antes <s>$'+money(x.precio_anterior)+'</s> Ahorrás $'+money(Number(x.precio_anterior)-Number(x.precio))+'</div>':''}
