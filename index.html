@@ -32,6 +32,8 @@
     .comparison{margin:22px 0 32px}.comparison h2{font-size:21px;margin:0}
     .comparison-summary{font-size:14px;color:#56625c;margin:4px 0 10px}
     .best-price{background:#d9f4e5;color:#075a37}
+    .previous-price{font-size:14px;color:#59655f;margin-top:3px}
+    .previous-price s{margin-right:6px}
     .location{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
     .location span{font-size:13px;color:#56625c}
     .favorite{background:#e9f7f0;color:#0d724a;margin-top:12px;margin-right:10px}
@@ -87,6 +89,7 @@
       <input id="merchant-image" type="url" placeholder="O enlace HTTPS de foto (opcional)">
       <input id="merchant-price" type="number" min="0" step="0.01" placeholder="Precio en pesos" required>
       <input id="merchant-stock" type="number" min="0" step="1" placeholder="Unidades disponibles" required>
+      <input id="merchant-previous-price" type="number" min="0" step="0.01" placeholder="Precio anterior de la oferta (opcional)">
       <label><input id="merchant-offer" type="checkbox"> Está en oferta</label>
       <button id="merchant-price-save" type="submit">Guardar precio</button>
     </form>
@@ -168,6 +171,8 @@ function render() {
       <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
       ${safeImage(x.productos?.imagen)?'<img src="'+esc(x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':''}
       <div class="price">$${money(x.precio)}</div>
+      ${x.en_oferta&&x.precio_anterior!=null&&Number(x.precio_anterior)>Number(x.precio)?
+        '<div class="previous-price">Antes <s>$'+money(x.precio_anterior)+'</s> Ahorrás $'+money(Number(x.precio_anterior)-Number(x.precio))+'</div>':''}
       <div class="meta">
         ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
         ${group.items.length>1&&Number(x.precio)===group.min?'<span class="pill best-price">Menor precio</span>':''}
@@ -199,7 +204,7 @@ function mapsUrl(store){
 }
 function phone(value){const digits=String(value||'').replace(/\D/g,'');return digits.length>=8&&digits.length<=15?digits:''}
 function safeImage(value){try{const url=new URL(value);return url.protocol==='https:'}catch{return false}}
-function money(n){return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0})}
+function money(n){return Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2})}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.getElementById('search').onclick=render;
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
