@@ -1,0 +1,1 @@
+insert into public.categorias (nombre) values ('Frutas y verduras'),('Panadería'),('Congelados'),('Mascotas'),('Bebés'),('Hogar'),('Electrónica'),('Ferretería'),('Ropa'),('Otros') on conflict (nombre) do nothing;
