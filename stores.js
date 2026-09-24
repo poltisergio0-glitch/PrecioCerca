@@ -17,6 +17,7 @@
       const maps = mapsUrl(store);
       return '<article class="card store-card">' +
         '<h3>' + esc(store.nombre) + '</h3>' +
+        (/demo/i.test(store.nombre) ? '<span class="pill sample">Comercio de ejemplo</span>' : '') +
         (store.direccion ? '<p>' + esc(store.direccion) + '</p>' : '') +
         '<div class="meta">' +
         (userLocation && Number.isFinite(distance) ?
