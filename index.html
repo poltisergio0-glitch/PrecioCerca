@@ -48,6 +48,9 @@
     .install{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
     .install span{font-size:13px;color:#56625c}
     .empty{text-align:center;padding:35px 10px;color:#65716b}
+    .directory{margin:22px 0}.directory h2{font-size:23px}.directory .search input{width:100%}
+    .store-card h3{margin:0;font-size:19px}.store-card p{color:#56625c}
+    .store-card .contact{margin-right:15px}#selected-store{margin:12px 0}
   </style>
 </head>
 <body>
@@ -110,6 +113,14 @@
     </form>
     <div id="merchant-message" role="status" aria-live="polite"></div>
   </details>
+  <section class="directory" aria-labelledby="directory-title">
+    <h2 id="directory-title">Buscar comercios</h2>
+    <div class="search"><input id="store-q" type="search" aria-label="Buscar comercios por nombre o dirección" placeholder="Nombre o dirección del local"></div>
+    <div id="store-status" role="status" aria-live="polite">Cargando comercios…</div>
+    <div id="store-results"></div>
+  </section>
+  <h2 id="products-title">Comparar productos</h2>
+  <div id="selected-store" hidden></div>
   <div class="search"><input id="q" placeholder="Ej: Coca-Cola, arroz, leche"><button id="search">Buscar</button></div>
   <div class="location"><button id="nearby" type="button">Usar mi ubicación</button><span id="distance-status">Activá tu ubicación para ver distancias.</span></div>
   <select id="radius">
@@ -144,7 +155,7 @@ let rows=[], userLocation=null;
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,actualizado_at,productos(id,nombre,marca,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,actualizado_at,productos(id,nombre,marca,imagen),comercios(id,nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -160,7 +171,7 @@ async function load() {
 function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
-  let data=rows.filter(x => !q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q));
+  let data=rows.filter(x => (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
   if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta);
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   if(document.getElementById('only-recent').checked) {
@@ -261,7 +272,7 @@ document.getElementById('nearby').onclick=()=>{
   label.textContent='Buscando tu ubicación…';
   navigator.geolocation.getCurrentPosition(
     position=>{userLocation={lat:position.coords.latitude,lon:position.coords.longitude};
-      label.textContent='Distancias aproximadas en línea recta.';render()},
+      label.textContent='Distancias aproximadas en línea recta.';render();window.renderStores?.()},
     ()=>{label.textContent='No se pudo obtener la ubicación. Revisá el permiso de ubicación.'},
     {enableHighAccuracy:true,timeout:15000,maximumAge:60000}
   );
@@ -286,10 +297,11 @@ window.addEventListener('appinstalled', () => {
   document.getElementById('install-app').hidden=true;
   document.getElementById('install-message').textContent='PrecioCerca instalada.';
 });
-window.addEventListener('preciocerca:prices-updated',load);
+window.addEventListener('preciocerca:prices-updated',()=>{load();window.loadStores?.()});
 window.addEventListener('preciocerca:favorites-updated',render);
 load();
 </script>
+<script src="stores.js" defer></script>
 <script src="auth.js" defer></script>
 <script src="merchant.js" defer></script>
 <script src="favorites.js" defer></script>
