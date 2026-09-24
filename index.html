@@ -29,6 +29,9 @@
     .merchant input,.merchant select{width:100%;margin:0}.merchant label{display:flex;align-items:center;gap:8px}
     .merchant label input{width:auto}.merchant h3{margin:12px 0 0}
     .card img{width:100%;max-height:180px;object-fit:contain;margin-top:10px}
+    .comparison{margin:22px 0 32px}.comparison h2{font-size:21px;margin:0}
+    .comparison-summary{font-size:14px;color:#56625c;margin:4px 0 10px}
+    .best-price{background:#d9f4e5;color:#075a37}
     .location{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
     .location span{font-size:13px;color:#56625c}
     .favorite{background:#e9f7f0;color:#0d724a;margin-top:12px;margin-right:10px}
@@ -144,7 +147,21 @@ function render() {
   if(sort==='distance') data.sort((a,b)=>distance(a)-distance(b));
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
   if(!data.length) { results.innerHTML='<div class="empty">No encontramos productos con esa búsqueda.</div>'; return; }
-  results.innerHTML=data.map(x=>{
+  const byProduct=new Map();
+  for(const row of data) {
+    const key=row.productos?.id || row.productos?.nombre || 'Producto';
+    if(!byProduct.has(key)) byProduct.set(key, []);
+    byProduct.get(key).push(row);
+  }
+  const groups=[...byProduct.values()].map(items=>({
+    items, name:items[0].productos?.nombre||'Producto',
+    min:Math.min(...items.map(x=>Number(x.precio))),
+    max:Math.max(...items.map(x=>Number(x.precio)))
+  }));
+  results.innerHTML=groups.map(group=>'<section class="comparison"><h2>'+esc(group.name)+
+    '</h2><p class="comparison-summary">'+group.items.length+' '+(group.items.length===1?'local':'locales')+
+    ' · Desde $'+money(group.min)+(group.max>group.min?' · Diferencia de $'+money(group.max-group.min):'')+
+    '</p>'+group.items.map(x=>{
     const d=x.comercios?.hace_delivery;
     return `<article class="card">
       <div class="product">${esc(x.productos?.nombre||'Producto')}</div>
@@ -153,6 +170,7 @@ function render() {
       <div class="price">$${money(x.precio)}</div>
       <div class="meta">
         ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
+        ${group.items.length>1&&Number(x.precio)===group.min?'<span class="pill best-price">Menor precio</span>':''}
         <span class="pill">Stock: ${x.stock??0}</span>
         ${userLocation&&Number.isFinite(distance(x))?'<span class="pill">A '+distance(x).toLocaleString('es-AR',{maximumFractionDigits:1})+' km</span>':''}
         <span class="pill">${d?'Delivery $'+money(x.comercios?.costo_delivery||0):'Sin delivery'}</span>
@@ -162,7 +180,7 @@ function render() {
       ${phone(x.comercios?.whatsapp)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+phone(x.comercios.whatsapp)+'">Consultar por WhatsApp</a>':''}
       ${mapsUrl(x.comercios)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="'+esc(mapsUrl(x.comercios))+'">Cómo llegar · Google Maps</a>':''}
     </article>`;
-  }).join('');
+  }).join('')+'</section>').join('');
 }
 function kmTo(lat,lon){
   if(!userLocation||lat==null||lon==null)return Infinity;
