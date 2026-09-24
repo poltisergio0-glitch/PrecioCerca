@@ -77,6 +77,16 @@
       <input id="merchant-delivery-cost" type="number" min="0" step="0.01" placeholder="Costo de delivery en pesos">
       <button id="merchant-store-save" type="submit">Guardar local</button>
     </form>
+    <h3>Editar datos de un local</h3>
+    <form id="merchant-edit-form">
+      <select id="merchant-edit-store" required><option value="">Elegí un local para editar</option></select>
+      <input id="merchant-edit-name" placeholder="Nombre del comercio" maxlength="100" required>
+      <input id="merchant-edit-address" placeholder="Dirección del local (opcional si tiene GPS)" maxlength="200">
+      <input id="merchant-edit-whatsapp" type="tel" placeholder="WhatsApp con código de país (opcional)" inputmode="tel">
+      <label><input id="merchant-edit-delivery" type="checkbox"> Hago delivery</label>
+      <input id="merchant-edit-delivery-cost" type="number" min="0" step="0.01" placeholder="Costo de delivery en pesos">
+      <button id="merchant-edit-save" type="submit">Guardar cambios del local</button>
+    </form>
     <h3>Cargar un precio</h3>
     <form id="merchant-price-form">
       <select id="merchant-store" required><option value="">Elegí un local</option></select>
