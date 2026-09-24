@@ -15,13 +15,32 @@
     .card{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0000000b}
     .product{font-weight:800;font-size:19px} .store{margin-top:4px;color:#56625c} .price{font-size:25px;font-weight:850;margin-top:12px}
     .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px} .pill{background:#e9f7f0;color:#0d724a;padding:6px 9px;border-radius:999px;font-size:13px}
-    .offer{background:#fff0dc;color:#8a5100} .empty{text-align:center;padding:35px 10px;color:#65716b}
+    .offer{background:#fff0dc;color:#8a5100}
+    .account{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:18px 0}
+    .account h2{margin:0 0 12px;font-size:20px}.account form{display:grid;gap:9px}
+    .account input{width:100%}.account .actions{display:flex;flex-wrap:wrap;gap:8px}
+    .account button.secondary{background:#e9f7f0;color:#0d724a}
+    #auth-message{font-size:14px;margin-top:10px;color:#43544a}
+    .empty{text-align:center;padding:35px 10px;color:#65716b}
   </style>
 </head>
 <body>
 <header><div class="brand">PrecioCerca</div><div class="tag">Compará antes de comprar</div></header>
 <main>
   <h1>¿Qué estás buscando?</h1>
+  <section class="account" aria-labelledby="account-title">
+    <h2 id="account-title">Tu cuenta</h2>
+    <div id="auth-out">
+      <form id="auth-form">
+        <input id="auth-name" name="name" autocomplete="name" placeholder="Tu nombre (para registrarte)" maxlength="80">
+        <input id="auth-email" name="email" type="email" autocomplete="email" placeholder="Correo electrónico" required>
+        <input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required>
+        <div class="actions"><button type="submit" id="auth-login">Ingresar</button><button class="secondary" type="button" id="auth-signup">Crear cuenta</button></div>
+      </form>
+    </div>
+    <div id="auth-in" hidden><span id="auth-user"></span> <button class="secondary" id="auth-logout" type="button">Salir</button></div>
+    <div id="auth-message" role="status" aria-live="polite">Podés comparar precios sin crear una cuenta.</div>
+  </section>
   <div class="search"><input id="q" placeholder="Ej: Coca-Cola, arroz, leche"><button id="search">Buscar</button></div>
   <select id="sort">
     <option value="delivery">Menor total + delivery</option>
@@ -84,5 +103,6 @@ document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')r
 document.getElementById('sort').onchange=render;
 load();
 </script>
+<script src="auth.js" defer></script>
 </body>
 </html>
