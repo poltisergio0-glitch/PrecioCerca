@@ -68,6 +68,8 @@
     if (!button) return;
     window.selectedStoreId = button.dataset.storeId;
     $('q').value = '';
+    selectedCategory = 'Todas';
+    renderCategories();
     showSelected(); render();
     $('products-title').scrollIntoView({ behavior: 'smooth' });
   });
