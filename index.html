@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#16a36a">
+  <title>PrecioCerca</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f5f7f6;color:#17201c}
+    header{background:#118a5a;color:white;padding:22px 18px} .brand{font-size:25px;font-weight:800} .tag{opacity:.9}
+    main{max-width:720px;margin:auto;padding:18px} h1{font-size:29px;margin:8px 0 18px}
+    .search{display:flex;gap:8px} input,select,button{font:inherit;border-radius:12px;border:1px solid #ccd5d0;padding:13px}
+    input{flex:1;min-width:0} button{background:#118a5a;color:white;border:0;font-weight:700;padding-inline:18px}
+    select{margin:14px 0;background:white;width:100%} #status{font-size:14px;color:#59655f;margin:8px 2px}
+    .card{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #0000000b}
+    .product{font-weight:800;font-size:19px} .store{margin-top:4px;color:#56625c} .price{font-size:25px;font-weight:850;margin-top:12px}
+    .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px} .pill{background:#e9f7f0;color:#0d724a;padding:6px 9px;border-radius:999px;font-size:13px}
+    .offer{background:#fff0dc;color:#8a5100} .empty{text-align:center;padding:35px 10px;color:#65716b}
+  </style>
+</head>
+<body>
+<header><div class="brand">PrecioCerca</div><div class="tag">Compará antes de comprar</div></header>
+<main>
+  <h1>¿Qué estás buscando?</h1>
+  <div class="search"><input id="q" placeholder="Ej: Coca-Cola, arroz, leche"><button id="search">Buscar</button></div>
+  <select id="sort">
+    <option value="delivery">Menor total + delivery</option>
+    <option value="price">Menor precio</option>
+    <option value="name">Producto A–Z</option>
+  </select>
+  <div id="status">Conectando con la base de datos…</div>
+  <section id="results"></section>
+</main>
+<script>
+const SUPABASE_URL='https://kgrnpypzounvgphjdrjg.supabase.co';
+const KEY='sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
+const statusEl=document.getElementById('status'), results=document.getElementById('results');
+let rows=[];
+
+async function load() {
+  statusEl.textContent='Conectando con la base de datos…';
+  try {
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre),comercios(nombre,hace_delivery,costo_delivery,whatsapp)&stock=gt.0';
+    const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+    if(!r.ok) throw new Error(await r.text());
+    rows=await r.json();
+    statusEl.textContent='Conectado ✓';
+    render();
+  } catch(e) {
+    statusEl.textContent='No se pudo consultar la base de datos.';
+    results.innerHTML='<div class="card"><b>Error de conexión</b><br>Revisaremos permisos/API de Supabase.</div>';
+    console.error(e);
+  }
+}
+
+function render() {
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const sort=document.getElementById('sort').value;
+  let data=rows.filter(x => !q || (x.productos?.nombre||'').toLowerCase().includes(q));
+  const total=x => Number(x.precio||0)+(x.comercios?.hace_delivery?Number(x.comercios?.costo_delivery||0):0);
+  if(sort==='delivery') data.sort((a,b)=>total(a)-total(b));
+  if(sort==='price') data.sort((a,b)=>Number(a.precio)-Number(b.precio));
+  if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
+  if(!data.length) { results.innerHTML='<div class="empty">No encontramos productos con esa búsqueda.</div>'; return; }
+  results.innerHTML=data.map(x=>{
+    const d=x.comercios?.hace_delivery;
+    return `<article class="card">
+      <div class="product">${esc(x.productos?.nombre||'Producto')}</div>
+      <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
+      <div class="price">$${money(x.precio)}</div>
+      <div class="meta">
+        ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
+        <span class="pill">Stock: ${x.stock??0}</span>
+        <span class="pill">${d?'Delivery $'+money(x.comercios?.costo_delivery||0):'Sin delivery'}</span>
+        ${d?'<span class="pill">Total $'+money(total(x))+'</span>':''}
+      </div>
+    </article>`;
+  }).join('');
+}
+function money(n){return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0})}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+document.getElementById('search').onclick=render;
+document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
+document.getElementById('sort').onchange=render;
+load();
+</script>
+</body>
+</html>
