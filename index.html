@@ -52,6 +52,9 @@
     .store-card h3{margin:0;font-size:19px}.store-card p{color:#56625c}
     .store-card .contact{margin-right:15px}#selected-store{margin:12px 0}
     .quick-nav{display:flex;gap:9px;margin:12px 0 18px}.quick-nav a{flex:1;text-align:center;text-decoration:none;border-radius:12px;background:#e0f3e8;color:#086041;font-weight:700;padding:12px 6px}
+    .options{background:#fff;border:1px solid #e0e6e3;border-radius:14px;padding:12px 14px;margin:12px 0}
+    .options summary{cursor:pointer;font-weight:700;color:#0d724a}.options select:last-of-type{margin-bottom:4px}
+    .sample{background:#fff2dc;color:#875600}
     .hero{background:linear-gradient(90deg,rgba(6,83,54,.94),rgba(10,105,67,.70)),url('assets/preciocerca-background.webp') center bottom / cover;color:white;border-radius:22px;padding:23px 20px;margin:12px 0 20px}
     .hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;opacity:.95}
     .product-search input{background:white}.product-search button{background:#ffce53;color:#28300e}
@@ -69,12 +72,13 @@
 <main>
   <div class="hero"><h1>Encontrá el mejor precio cerca tuyo</h1><p>Buscá, compará y elegí dónde comprar.</p></div>
   <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
-  <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#directory-title">🏪 Comercios</a></nav>
+  <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#directory-title">🏪 Comercios</a><a href="#account-title">👤 Mi cuenta</a></nav>
   <h2 id="products-title">Comparar productos</h2>
   <div id="category-list" class="category-list" aria-label="Categorías de productos"></div>
   <div id="selected-store" hidden></div>
   <div class="search product-search"><input id="q" type="search" aria-label="Buscar productos" placeholder="Ej: arroz, leche, gaseosa"><button id="search">Buscar</button></div>
   <div class="location"><button id="nearby" type="button">Usar mi ubicación</button><span id="distance-status">Activá tu ubicación para ver distancias.</span></div>
+  <details class="options"><summary>Ordenar y filtrar resultados</summary>
   <select id="radius">
     <option value="all">Cualquier distancia</option>
     <option value="2">Hasta 2 km</option>
@@ -82,8 +86,8 @@
     <option value="10">Hasta 10 km</option>
   </select>
   <select id="sort">
-    <option value="delivery">Menor total + delivery</option>
     <option value="price">Menor precio</option>
+    <option value="delivery">Precio + delivery (si tiene)</option>
     <option value="name">Producto A–Z</option>
     <option value="distance">Más cercanos</option>
     <option value="updated">Actualizados más recientemente</option>
@@ -93,6 +97,7 @@
     <label><input type="checkbox" id="only-delivery"> Con delivery</label>
     <label><input type="checkbox" id="only-recent"> Actualizados en los últimos 7 días</label>
   </div>
+  </details>
   <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
   <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
@@ -230,6 +235,7 @@ function render() {
   const distance=x => kmTo(x.comercios?.latitud,x.comercios?.longitud);
   const radius=document.getElementById('radius').value;
   if(userLocation && radius!=='all') data=data.filter(x=>distance(x)<=Number(radius));
+  if(!userLocation && (radius!=='all'||sort==='distance')) document.getElementById('distance-status').textContent='Tocá “Usar mi ubicación” para aplicar la distancia.';
   if(document.getElementById('only-favorites').checked) data=data.filter(x=>window.PrecioCercaFavorites?.has(x.productos?.id));
   const total=x => Number(x.precio||0)+(x.comercios?.hace_delivery?Number(x.comercios?.costo_delivery||0):0);
   if(sort==='delivery') data.sort((a,b)=>total(a)-total(b));
@@ -272,6 +278,7 @@ function render() {
         '<div class="previous-price">Antes <s>$'+money(x.precio_anterior)+'</s> Ahorrás $'+money(Number(x.precio_anterior)-Number(x.precio))+'</div>':''}
       <div class="meta">
         ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
+        ${/demo/i.test(x.comercios?.nombre||'')?'<span class="pill sample">Datos de ejemplo</span>':''}
         ${group.items.length>1&&Number(x.precio)===group.min?'<span class="pill best-price">Menor precio</span>':''}
         <span class="pill">Stock: ${x.stock??0}</span>
         ${userLocation&&Number.isFinite(distance(x))?'<span class="pill">A '+distance(x).toLocaleString('es-AR',{maximumFractionDigits:1})+' km</span>':''}
