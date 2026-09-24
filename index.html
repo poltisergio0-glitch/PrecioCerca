@@ -115,7 +115,7 @@
       <form id="auth-form">
         <input id="auth-name" name="name" autocomplete="name" placeholder="Tu nombre (para registrarte)" maxlength="80">
         <input id="auth-email" name="email" type="email" autocomplete="email" placeholder="Correo electrónico" required>
-        <input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required>
+        <input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="Contraseña (8 caracteres para crear cuenta)" minlength="6" required>
         <div class="actions"><button type="submit" id="auth-login">Ingresar</button><button class="secondary" type="button" id="auth-signup">Crear cuenta</button></div>
       </form>
     </div>
@@ -376,7 +376,7 @@ load();
 loadCategories();
 </script>
 <script src="stores.js?v=3" defer></script>
-<script src="auth.js" defer></script>
+<script src="auth.js?v=2" defer></script>
 <script src="merchant.js?v=2" defer></script>
 <script src="favorites.js" defer></script>
 </body>
