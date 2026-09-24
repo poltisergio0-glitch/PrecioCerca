@@ -63,17 +63,20 @@
     });
     $('selected-store').append(clear);
   }
-  $('store-q').addEventListener('input', renderStores);
-  $('store-results').addEventListener('click', event => {
-    const button = event.target.closest('[data-store-id]');
-    if (!button) return;
-    window.selectedStoreId = button.dataset.storeId;
+  function showProducts(storeId) {
+    window.selectedStoreId = storeId;
     $('q').value = '';
     selectedCategory = 'Todas';
     renderCategories();
     showSelected(); render();
     $('products-title').scrollIntoView({ behavior: 'smooth' });
+  }
+  $('store-q').addEventListener('input', renderStores);
+  $('store-results').addEventListener('click', event => {
+    const button = event.target.closest('[data-store-id]');
+    if (button) showProducts(button.dataset.storeId);
   });
+  window.PrecioCercaStores = { showProducts };
   window.renderStores = renderStores;
   window.loadStores = loadStores;
   loadStores();
