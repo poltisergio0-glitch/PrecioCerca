@@ -55,6 +55,11 @@
     .options{background:#fff;border:1px solid #e0e6e3;border-radius:14px;padding:12px 14px;margin:12px 0}
     .options summary{cursor:pointer;font-weight:700;color:#0d724a}.options select:last-of-type{margin-bottom:4px}
     .sample{background:#fff2dc;color:#875600}
+    .basket{background:#fff;border:1px solid #d9e6dd;border-radius:17px;padding:16px;margin:20px 0}
+    .basket h2{margin:0 0 5px;font-size:21px}.basket p{margin:5px 0 12px;color:#56625c}
+    .basket-items{display:flex;flex-wrap:wrap;gap:7px}.basket-items button,.add-list{background:#e4f5e9;color:#075a37}
+    .basket .card{box-shadow:none}.basket .card h3{margin:0 0 8px}.add-list{margin:5px 0 8px}
+    .basket-total{font-weight:800;font-size:21px;color:#095b39}
     .hero{background:linear-gradient(90deg,rgba(6,83,54,.94),rgba(10,105,67,.70)),url('assets/preciocerca-background.webp') center bottom / cover;color:white;border-radius:22px;padding:23px 20px;margin:12px 0 20px}
     .hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;opacity:.95}
     .product-search input{background:white}.product-search button{background:#ffce53;color:#28300e}
@@ -101,6 +106,7 @@
   <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
   <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
+  <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 Compará tu lista de compras</h2><p>Agregá productos para ver cuánto sale la compra completa en cada comercio.</p><div id="basket-content" aria-live="polite"></div></section>
   <section id="results"></section>
   <section class="directory" aria-labelledby="directory-title">
     <h2 id="directory-title">Buscar comercios</h2>
@@ -182,6 +188,7 @@ async function load() {
     statusEl.textContent='Conectado ✓';
     renderCategories();
     render();
+    window.dispatchEvent(new Event('preciocerca:prices-loaded'));
   } catch(e) {
     statusEl.textContent='No se pudo consultar la base de datos.';
     results.innerHTML='<div class="card"><b>Error de conexión</b><br>Revisaremos permisos/API de Supabase.</div>';
@@ -264,7 +271,7 @@ function render() {
     (group.brand?' · '+esc(group.brand):'')+
     '</h2><p class="comparison-summary">'+group.items.length+' '+(group.items.length===1?'local':'locales')+
     ' · Desde $'+money(group.min)+(group.max>group.min?' · Diferencia de $'+money(group.max-group.min):'')+
-    '</p>'+group.items.map(x=>{
+    '</p>'+(group.items[0].productos?.id?'<button type="button" class="add-list" data-list-product="'+esc(group.items[0].productos.id)+'">'+(window.PrecioCercaList?.has(group.items[0].productos.id)?'✓ En mi lista':'＋ Agregar a mi lista')+'</button>':'')+group.items.map(x=>{
     const d=x.comercios?.hace_delivery;
     return `<article class="card">
       <div class="product">${esc(x.productos?.nombre||'Producto')}${x.productos?.marca?' · '+esc(x.productos.marca):''}</div>
@@ -379,5 +386,6 @@ loadCategories();
 <script src="auth.js?v=2" defer></script>
 <script src="merchant.js?v=2" defer></script>
 <script src="favorites.js" defer></script>
+<script src="shopping-list.js" defer></script>
 </body>
 </html>
