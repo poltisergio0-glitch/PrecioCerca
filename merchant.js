@@ -2,7 +2,7 @@
   const BASE = 'https://kgrnpypzounvgphjdrjg.supabase.co/rest/v1';
   const KEY = 'sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
   const $ = id => document.getElementById(id);
-  let stores = [];
+  let stores = [], pendingLocation = null;
   function message(text) { $('merchant-message').textContent = text; }
   async function api(path, options = {}) {
     const session = await window.PrecioCercaAuth.getSession();
@@ -34,6 +34,28 @@
       message(stores.length ? 'Elegí tu local para cargar un precio.' : 'Registrá tu local para comenzar.');
     } catch (error) { message(error.message); }
   }
+  function getPosition() {
+    if (!navigator.geolocation) return Promise.reject(new Error('Este navegador no permite obtener la ubicación.'));
+    return new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject,
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }));
+  }
+  $('merchant-new-gps').addEventListener('click', async () => {
+    const button = $('merchant-new-gps'); button.disabled = true;
+    pendingLocation = null;
+    $('merchant-new-gps-status').textContent = 'Buscando tu ubicación…';
+    try {
+      const position = await getPosition();
+      if (position.coords.accuracy > 1000)
+        throw new Error('La ubicación es poco precisa. Activá el GPS e intentá nuevamente.');
+      pendingLocation = { latitud: position.coords.latitude, longitud: position.coords.longitude };
+      $('merchant-new-gps-status').textContent = 'GPS listo. Se guardará junto con el local.';
+    } catch (error) {
+      $('merchant-new-gps-status').textContent = error.code === 1 ?
+        'Permití la ubicación en el navegador para continuar.' :
+        (error.message || 'No se pudo obtener la ubicación.');
+    } finally { button.disabled = false; }
+  });
   $('merchant-geolocate').addEventListener('click', async () => {
     const storeId = $('merchant-store').value;
     if (!stores.some(store => store.id === storeId)) { message('Elegí tu local primero.'); return; }
@@ -41,9 +63,7 @@
     const button = $('merchant-geolocate'); button.disabled = true;
     message('Buscando la ubicación del local…');
     try {
-      const position = await new Promise((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject,
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }));
+      const position = await getPosition();
       if (position.coords.accuracy > 1000)
         throw new Error('La ubicación es poco precisa. Activá el GPS e intentá nuevamente.');
       await api('/comercios?id=eq.' + encodeURIComponent(storeId), { method: 'PATCH',
@@ -70,9 +90,12 @@
         direccion: $('merchant-address').value.trim(),
         whatsapp: whatsapp || null,
         hace_delivery: delivery,
-        costo_delivery: delivery ? Number($('merchant-delivery-cost').value || 0) : 0
+        costo_delivery: delivery ? Number($('merchant-delivery-cost').value || 0) : 0,
+        ...(pendingLocation || {})
       } });
       $('merchant-store-form').reset();
+      pendingLocation = null;
+      $('merchant-new-gps-status').textContent = 'Opcional. Hacelo cuando estés en el local.';
       await refresh();
       $('merchant-store').value = result[0].id;
       message('Local registrado. Ya podés cargar productos.');
