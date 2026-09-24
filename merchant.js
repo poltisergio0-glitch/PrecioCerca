@@ -130,6 +130,12 @@
     try {
       const storeId = $('merchant-store').value;
       if (!stores.some(store => store.id === storeId)) throw new Error('Elegí tu local primero.');
+      const price = Number($('merchant-price').value);
+      const enteredPrevious = $('merchant-previous-price').value.trim();
+      const offer = $('merchant-offer').checked;
+      if (enteredPrevious && !offer) throw new Error('Marcá “Está en oferta” para indicar un precio anterior.');
+      if (enteredPrevious && Number(enteredPrevious) <= price)
+        throw new Error('El precio anterior de una oferta debe ser mayor al precio actual.');
       let productId = $('merchant-product').value;
       const photo = $('merchant-photo').files[0];
       if (productId && photo) throw new Error('La foto se agrega al crear un producto nuevo. Elegí “Nuevo producto”.');
@@ -145,9 +151,14 @@
         } });
         productId = created[0].id;
       }
+      const existing = await api('/precios?select=precio,precio_anterior&producto_id=eq.' +
+        encodeURIComponent(productId) + '&comercio_id=eq.' + encodeURIComponent(storeId) + '&limit=1');
+      const previous = enteredPrevious ? Number(enteredPrevious) :
+        existing.length && Number(existing[0].precio) !== price ? Number(existing[0].precio) :
+        (existing[0]?.precio_anterior == null ? null : Number(existing[0].precio_anterior));
       await api('/precios?on_conflict=producto_id,comercio_id', { method: 'POST', upsert: true, body: {
         producto_id: productId, comercio_id: storeId,
-        precio: Number($('merchant-price').value),
+        precio: price, precio_anterior: previous,
         stock: Number($('merchant-stock').value),
         en_oferta: $('merchant-offer').checked,
         actualizado_at: new Date().toISOString()
