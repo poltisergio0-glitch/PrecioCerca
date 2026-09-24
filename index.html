@@ -101,7 +101,7 @@ let rows=[], userLocation=null;
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -142,6 +142,7 @@ function render() {
         ${d?'<span class="pill">Total $'+money(total(x))+'</span>':''}
       </div>
       ${phone(x.comercios?.whatsapp)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+phone(x.comercios.whatsapp)+'">Consultar por WhatsApp</a>':''}
+      ${mapsUrl(x.comercios)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="'+esc(mapsUrl(x.comercios))+'">Cómo llegar · Google Maps</a>':''}
     </article>`;
   }).join('');
 }
@@ -150,6 +151,15 @@ function kmTo(lat,lon){
   const rad=Math.PI/180, a=(Number(lat)-userLocation.lat)*rad, b=(Number(lon)-userLocation.lon)*rad;
   const hav=Math.sin(a/2)**2+Math.cos(userLocation.lat*rad)*Math.cos(Number(lat)*rad)*Math.sin(b/2)**2;
   return 12742*Math.asin(Math.min(1,Math.sqrt(hav)));
+}
+function mapsUrl(store){
+  if(!store)return '';
+  const lat=Number(store.latitud),lon=Number(store.longitud);
+  const hasCoords=store.latitud!=null&&store.longitud!=null&&Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180;
+  const destination=hasCoords?lat+','+lon:(store.direccion||'').trim();
+  if(!destination)return '';
+  const params=new URLSearchParams({api:'1',destination,travelmode:'driving',dir_action:'navigate'});
+  return 'https://www.google.com/maps/dir/?'+params.toString();
 }
 function phone(value){const digits=String(value||'').replace(/\D/g,'');return digits.length>=8&&digits.length<=15?digits:''}
 function safeImage(value){try{const url=new URL(value);return url.protocol==='https:'}catch{return false}}
