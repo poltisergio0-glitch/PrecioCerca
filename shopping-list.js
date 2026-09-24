@@ -16,6 +16,12 @@
       container.innerHTML = '<p>Tu lista está vacía. Tocá “Agregar a mi lista” en los productos que quieras comparar.</p>';
       return;
     }
+    if (!rows.length) {
+      container.innerHTML = statusEl.textContent === 'No se pudo consultar la base de datos.' ?
+        '<p>No pudimos actualizar la lista. Revisá tu conexión y recargá la app.</p>' :
+        '<p>Cargando precios para comparar tu lista…</p>';
+      return;
+    }
     const products = new Map(rows.filter(row => row.productos?.id)
       .map(row => [row.productos.id, row.productos]));
     const names = [...selected].map(id => ({
@@ -83,5 +89,6 @@
   });
   window.PrecioCercaList = { has: id => selected.has(id) };
   window.addEventListener('preciocerca:prices-loaded', renderList);
+  window.addEventListener('preciocerca:prices-failed', renderList);
   renderList();
 })();
