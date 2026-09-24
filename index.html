@@ -71,7 +71,7 @@
 <header><div class="brand">PrecioCerca</div><div class="tag">Compará antes de comprar</div></header>
 <main>
   <div class="hero"><h1>Encontrá el mejor precio cerca tuyo</h1><p>Buscá, compará y elegí dónde comprar.</p></div>
-  <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
+  <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><button id="share-app" type="button">Compartir app</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
   <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#directory-title">🏪 Comercios</a><a href="#account-title">👤 Mi cuenta</a></nav>
   <h2 id="products-title">Comparar productos</h2>
   <div id="category-list" class="category-list" aria-label="Categorías de productos"></div>
@@ -355,6 +355,20 @@ document.getElementById('install-app').addEventListener('click', async () => {
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-app').hidden=true;
   document.getElementById('install-message').textContent='PrecioCerca instalada.';
+});
+if(window.matchMedia('(display-mode: standalone)').matches){
+  document.getElementById('install-app').hidden=true;
+  document.getElementById('install-message').textContent='PrecioCerca instalada.';
+}
+document.getElementById('share-app').addEventListener('click',async()=>{
+  const url=new URL('./',location.href).href;
+  const info=document.getElementById('install-message');
+  if(navigator.share){
+    try{await navigator.share({title:'PrecioCerca',text:'Compará precios en comercios cercanos',url});return}
+    catch(error){if(error.name==='AbortError')return}
+  }
+  try{await navigator.clipboard.writeText(url);info.textContent='Enlace copiado. Pegalo en WhatsApp para compartir.'}
+  catch{info.textContent='Compartí este enlace: '+url}
 });
 window.addEventListener('preciocerca:prices-updated',()=>{load();window.loadStores?.()});
 window.addEventListener('preciocerca:favorites-updated',render);
