@@ -83,6 +83,8 @@
       if (!session) throw new Error('Ingresá a tu cuenta primero.');
       const whatsapp = $('merchant-whatsapp').value.replace(/\D/g, '');
       if (whatsapp && (whatsapp.length < 8 || whatsapp.length > 15)) throw new Error('Escribí WhatsApp con código de país y solo números.');
+      if (!$('merchant-address').value.trim() && !pendingLocation)
+        throw new Error('Escribí la dirección o usá el GPS para ubicar el local.');
       const delivery = $('merchant-delivery').checked;
       const result = await api('/comercios', { method: 'POST', body: {
         propietario_id: session.user.id,
