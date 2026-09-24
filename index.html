@@ -253,7 +253,7 @@ function render() {
     min:Math.min(...items.map(x=>Number(x.precio))),
     max:Math.max(...items.map(x=>Number(x.precio)))
   }));
-  statusEl.textContent=data.length+' precios en '+groups.length+' '+(groups.length===1?'producto':'productos')+'.';
+  statusEl.textContent=data.length+' '+(data.length===1?'precio':'precios')+' en '+groups.length+' '+(groups.length===1?'producto':'productos')+'.';
   results.innerHTML=groups.map(group=>'<section class="comparison"><h2>'+esc(group.name)+
     (group.brand?' · '+esc(group.brand):'')+
     '</h2><p class="comparison-summary">'+group.items.length+' '+(group.items.length===1?'local':'locales')+
