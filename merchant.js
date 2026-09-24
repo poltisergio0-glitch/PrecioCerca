@@ -104,6 +104,26 @@
     } catch (error) { message(error.message); }
     finally { button.disabled = false; }
   });
+  async function uploadPhoto(file) {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+      throw new Error('Elegí una imagen JPG, PNG o WebP.');
+    if (file.size > 2097152) throw new Error('La foto debe pesar hasta 2 MB.');
+    const session = await window.PrecioCercaAuth.getSession();
+    if (!session) throw new Error('Ingresá a tu cuenta para subir una foto.');
+    const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type];
+    const path = session.user.id + '/' + crypto.randomUUID() + '.' + ext;
+    const response = await fetch('https://kgrnpypzounvgphjdrjg.supabase.co/storage/v1/object/fotos-productos/' + path, {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + session.access_token,
+        'Content-Type': file.type, 'cache-control': '3600' },
+      body: file
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'No se pudo subir la foto. Intentá de nuevo.');
+    }
+    return 'https://kgrnpypzounvgphjdrjg.supabase.co/storage/v1/object/public/fotos-productos/' + path;
+  }
   $('merchant-price-form').addEventListener('submit', async event => {
     event.preventDefault();
     const button = $('merchant-price-save'); button.disabled = true;
@@ -111,12 +131,17 @@
       const storeId = $('merchant-store').value;
       if (!stores.some(store => store.id === storeId)) throw new Error('Elegí tu local primero.');
       let productId = $('merchant-product').value;
+      const photo = $('merchant-photo').files[0];
+      if (productId && photo) throw new Error('La foto se agrega al crear un producto nuevo. Elegí “Nuevo producto”.');
       if (!productId) {
         const nombre = $('merchant-product-name').value.trim();
         if (!nombre) throw new Error('Elegí un producto existente o escribí el nombre de uno nuevo.');
+        if (photo && $('merchant-image').value.trim()) throw new Error('Elegí una foto o un enlace, no ambos.');
+        if (photo) message('Subiendo foto del producto…');
+        const image = photo ? await uploadPhoto(photo) : $('merchant-image').value.trim() || null;
         const created = await api('/productos', { method: 'POST', body: {
           nombre, marca: $('merchant-brand').value.trim() || null,
-          imagen: $('merchant-image').value.trim() || null
+          imagen: image
         } });
         productId = created[0].id;
       }
