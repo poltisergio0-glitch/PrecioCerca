@@ -68,6 +68,10 @@
     if (!$('auth-form').reportValidity()) return;
     const nombre = $('auth-name').value.trim();
     if (!nombre) { notice('Escribí tu nombre para crear la cuenta.'); $('auth-name').focus(); return; }
+    if ($('auth-password').value.length < 8) {
+      notice('Para crear una cuenta usá una contraseña de al menos 8 caracteres.');
+      $('auth-password').focus(); return;
+    }
     const button = $('auth-signup'); button.disabled = true;
     try {
       const result = await request('/signup', {
