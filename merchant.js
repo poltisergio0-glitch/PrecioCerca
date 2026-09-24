@@ -232,6 +232,11 @@
       const storeId = $('merchant-store').value;
       if (!stores.some(store => store.id === storeId)) throw new Error('Elegí tu local primero.');
       const price = Number($('merchant-price').value);
+      const stock = Number($('merchant-stock').value);
+      if (!$('merchant-price').value || !Number.isFinite(price) || price < 0)
+        throw new Error('Ingresá un precio válido.');
+      if (!$('merchant-stock').value || !Number.isInteger(stock) || stock < 0)
+        throw new Error('Ingresá una cantidad de stock válida.');
       const enteredPrevious = $('merchant-previous-price').value.trim();
       const offer = $('merchant-offer').checked;
       if (enteredPrevious && !offer) throw new Error('Marcá “Está en oferta” para indicar un precio anterior.');
@@ -254,13 +259,14 @@
       }
       const existing = await api('/precios?select=precio,precio_anterior&producto_id=eq.' +
         encodeURIComponent(productId) + '&comercio_id=eq.' + encodeURIComponent(storeId) + '&limit=1');
-      const previous = enteredPrevious ? Number(enteredPrevious) :
-        existing.length && Number(existing[0].precio) !== price ? Number(existing[0].precio) :
-        (existing[0]?.precio_anterior == null ? null : Number(existing[0].precio_anterior));
+      const previous = offer ? (enteredPrevious ? Number(enteredPrevious) :
+        existing.length && Number(existing[0].precio) > price ? Number(existing[0].precio) :
+        (existing[0]?.precio_anterior != null && Number(existing[0].precio_anterior) > price
+          ? Number(existing[0].precio_anterior) : null)) : null;
       await api('/precios?on_conflict=producto_id,comercio_id', { method: 'POST', upsert: true, body: {
         producto_id: productId, comercio_id: storeId,
         precio: price, precio_anterior: previous,
-        stock: Number($('merchant-stock').value),
+        stock,
         en_oferta: $('merchant-offer').checked,
         actualizado_at: new Date().toISOString()
       } });
