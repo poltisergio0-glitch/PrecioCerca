@@ -34,12 +34,7 @@
       '<button type="button" id="detail-products">Ver productos del comercio</button></div>';
     document.getElementById('detail-products').onclick = () => {
       dialog.close();
-      window.selectedStoreId = store.id;
-      selectedCategory = 'Todas';
-      renderCategories();
-      document.getElementById('q').value = '';
-      render();
-      document.getElementById('products-title').scrollIntoView({ behavior: 'smooth' });
+      window.PrecioCercaStores.showProducts(store.id);
     };
     dialog.showModal();
   }
