@@ -73,7 +73,9 @@
       <select id="merchant-product"><option value="">Nuevo producto</option></select>
       <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
       <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
-      <input id="merchant-image" type="url" placeholder="Enlace HTTPS de foto (opcional)">
+      <label for="merchant-photo">Foto del producto nuevo (opcional, hasta 2 MB)</label>
+      <input id="merchant-photo" type="file" accept="image/jpeg,image/png,image/webp">
+      <input id="merchant-image" type="url" placeholder="O enlace HTTPS de foto (opcional)">
       <input id="merchant-price" type="number" min="0" step="0.01" placeholder="Precio en pesos" required>
       <input id="merchant-stock" type="number" min="0" step="1" placeholder="Unidades disponibles" required>
       <label><input id="merchant-offer" type="checkbox"> Está en oferta</label>
