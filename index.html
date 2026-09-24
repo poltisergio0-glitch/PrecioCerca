@@ -55,6 +55,8 @@
     <form id="merchant-store-form">
       <input id="merchant-store-name" placeholder="Nombre del comercio" maxlength="100" required>
       <input id="merchant-address" placeholder="Dirección del local" maxlength="200" required>
+      <button id="merchant-new-gps" class="secondary" type="button">Usar GPS para ubicar este local</button>
+      <small id="merchant-new-gps-status">Opcional. Hacelo cuando estés en el local.</small>
       <input id="merchant-whatsapp" type="tel" placeholder="WhatsApp con código de país (ej: 549351...)" inputmode="tel">
       <label><input id="merchant-delivery" type="checkbox"> Hago delivery</label>
       <input id="merchant-delivery-cost" type="number" min="0" step="0.01" placeholder="Costo de delivery en pesos">
@@ -63,7 +65,7 @@
     <h3>Cargar un precio</h3>
     <form id="merchant-price-form">
       <select id="merchant-store" required><option value="">Elegí un local</option></select>
-      <button id="merchant-geolocate" class="secondary" type="button">Guardar ubicación de este local (estando ahí)</button>
+      <button id="merchant-geolocate" class="secondary" type="button">Actualizar GPS del local elegido</button>
       <select id="merchant-product"><option value="">Nuevo producto</option></select>
       <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
       <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
