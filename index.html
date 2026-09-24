@@ -123,10 +123,12 @@
     <option value="price">Menor precio</option>
     <option value="name">Producto A–Z</option>
     <option value="distance">Más cercanos</option>
+    <option value="updated">Actualizados más recientemente</option>
   </select>
   <div id="filters">
     <label><input type="checkbox" id="only-offers"> Solo ofertas</label>
     <label><input type="checkbox" id="only-delivery"> Con delivery</label>
+    <label><input type="checkbox" id="only-recent"> Actualizados en los últimos 7 días</label>
   </div>
   <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
   <div id="favorites-message" role="status" aria-live="polite"></div>
@@ -161,6 +163,10 @@ function render() {
   let data=rows.filter(x => !q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q));
   if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta);
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
+  if(document.getElementById('only-recent').checked) {
+    const cutoff=Date.now()-7*24*60*60*1000;
+    data=data.filter(x=>x.actualizado_at && new Date(x.actualizado_at).getTime()>=cutoff);
+  }
   const distance=x => kmTo(x.comercios?.latitud,x.comercios?.longitud);
   const radius=document.getElementById('radius').value;
   if(userLocation && radius!=='all') data=data.filter(x=>distance(x)<=Number(radius));
@@ -169,6 +175,7 @@ function render() {
   if(sort==='delivery') data.sort((a,b)=>total(a)-total(b));
   if(sort==='price') data.sort((a,b)=>Number(a.precio)-Number(b.precio));
   if(sort==='distance') data.sort((a,b)=>distance(a)-distance(b));
+  if(sort==='updated') data.sort((a,b)=>new Date(b.actualizado_at||0)-new Date(a.actualizado_at||0));
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
   if(!data.length) {
     statusEl.textContent='Sin resultados con esos filtros.';
@@ -245,6 +252,7 @@ document.getElementById('q').addEventListener('input',render);
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
 document.getElementById('only-offers').addEventListener('change',render);
 document.getElementById('only-delivery').addEventListener('change',render);
+document.getElementById('only-recent').addEventListener('change',render);
 document.getElementById('sort').onchange=render;
 document.getElementById('radius').onchange=render;
 document.getElementById('nearby').onclick=()=>{
