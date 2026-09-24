@@ -249,24 +249,29 @@
       if (enteredPrevious && Number(enteredPrevious) <= price)
         throw new Error('El precio anterior de una oferta debe ser mayor al precio actual.');
       let productId = $('merchant-product').value;
+      const existingProduct = Boolean(productId);
       const photo = $('merchant-photo').files[0];
-      if (productId && photo) throw new Error('La foto se agrega al crear un producto nuevo. Elegí “Nuevo producto”.');
+      const imageLink = $('merchant-image').value.trim();
+      if (photo && imageLink) throw new Error('Elegí una foto o un enlace, no ambos.');
+      if (imageLink && !/^https:\/\//i.test(imageLink)) throw new Error('El enlace de la foto debe comenzar con HTTPS.');
       if (!productId) {
         const nombre = $('merchant-product-name').value.trim();
         const categoryId = $('merchant-category').value;
         if (!categoryId) throw new Error('Elegí una categoría para el producto nuevo.');
         if (!nombre) throw new Error('Elegí un producto existente o escribí el nombre de uno nuevo.');
-        if (photo && $('merchant-image').value.trim()) throw new Error('Elegí una foto o un enlace, no ambos.');
         if (photo) message('Subiendo foto del producto…');
-        const image = photo ? await uploadPhoto(photo) : $('merchant-image').value.trim() || null;
+        const image = photo ? await uploadPhoto(photo) : imageLink || null;
         const created = await api('/productos', { method: 'POST', body: {
           nombre, marca: $('merchant-brand').value.trim() || null,
           categoria_id: categoryId, imagen: image
         } });
         productId = created[0].id;
       }
-      const existing = await api('/precios?select=precio,precio_anterior&producto_id=eq.' +
+      const existing = await api('/precios?select=precio,precio_anterior,imagen&producto_id=eq.' +
         encodeURIComponent(productId) + '&comercio_id=eq.' + encodeURIComponent(storeId) + '&limit=1');
+      if (existingProduct && photo) message('Subiendo foto de tu producto…');
+      const storeImage = existingProduct ? (photo ? await uploadPhoto(photo) :
+        imageLink || existing[0]?.imagen || null) : null;
       const previous = offer ? (enteredPrevious ? Number(enteredPrevious) :
         existing.length && Number(existing[0].precio) > price ? Number(existing[0].precio) :
         (existing[0]?.precio_anterior != null && Number(existing[0].precio_anterior) > price
@@ -274,7 +279,7 @@
       await api('/precios?on_conflict=producto_id,comercio_id', { method: 'POST', upsert: true, body: {
         producto_id: productId, comercio_id: storeId,
         precio: price, precio_anterior: previous,
-        stock,
+        imagen: storeImage, stock,
         en_oferta: $('merchant-offer').checked,
         actualizado_at: new Date().toISOString()
       } });
