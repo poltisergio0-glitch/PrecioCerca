@@ -193,6 +193,7 @@ async function load() {
     statusEl.textContent='No se pudo consultar la base de datos.';
     results.innerHTML='<div class="card"><b>Error de conexión</b><br>Revisaremos permisos/API de Supabase.</div>';
     console.error(e);
+    window.dispatchEvent(new Event('preciocerca:prices-failed'));
   }
 }
 
@@ -386,6 +387,6 @@ loadCategories();
 <script src="auth.js?v=2" defer></script>
 <script src="merchant.js?v=2" defer></script>
 <script src="favorites.js" defer></script>
-<script src="shopping-list.js" defer></script>
+<script src="shopping-list.js?v=2" defer></script>
 </body>
 </html>
