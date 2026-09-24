@@ -51,6 +51,7 @@
     .directory{margin:22px 0}.directory h2{font-size:23px}.directory .search input{width:100%}
     .store-card h3{margin:0;font-size:19px}.store-card p{color:#56625c}
     .store-card .contact{margin-right:15px}#selected-store{margin:12px 0}
+    .quick-nav{display:flex;gap:9px;margin:12px 0 18px}.quick-nav a{flex:1;text-align:center;text-decoration:none;border-radius:12px;background:#e0f3e8;color:#086041;font-weight:700;padding:12px 6px}
     .hero{background:linear-gradient(135deg,#0d8051,#16aa70);color:white;border-radius:22px;padding:23px 20px;margin:12px 0 20px}
     .hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;opacity:.95}
     .product-search input{background:white}.product-search button{background:#ffce53;color:#28300e}
@@ -68,12 +69,7 @@
 <main>
   <div class="hero"><h1>Encontrá el mejor precio cerca tuyo</h1><p>Buscá, compará y elegí dónde comprar.</p></div>
   <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
-  <section class="directory" aria-labelledby="directory-title">
-    <h2 id="directory-title">Buscar comercios</h2>
-    <div class="search"><input id="store-q" type="search" aria-label="Buscar comercios por nombre o dirección" placeholder="Nombre o dirección del local"></div>
-    <div id="store-status" role="status" aria-live="polite">Cargando comercios…</div>
-    <div id="store-results"></div>
-  </section>
+  <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#directory-title">🏪 Comercios</a></nav>
   <h2 id="products-title">Comparar productos</h2>
   <div id="category-list" class="category-list" aria-label="Categorías de productos"></div>
   <div id="selected-store" hidden></div>
@@ -101,6 +97,13 @@
   <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
   <section id="results"></section>
+  <section class="directory" aria-labelledby="directory-title">
+    <h2 id="directory-title">Buscar comercios</h2>
+    <div class="search"><input id="store-q" type="search" aria-label="Buscar comercios por nombre o dirección" placeholder="Nombre o dirección del local"></div>
+    <div id="store-status" role="status" aria-live="polite">Cargando comercios…</div>
+    <div id="store-results"></div>
+  </section>
+
   <section class="account" aria-labelledby="account-title">
     <h2 id="account-title">Tu cuenta</h2>
     <div id="auth-out">
@@ -144,6 +147,7 @@
       <select id="merchant-product"><option value="">Nuevo producto</option></select>
       <small id="merchant-price-current" role="status" aria-live="polite">Elegí un producto para cargar o actualizar su precio.</small>
       <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
+      <select id="merchant-category" aria-label="Categoría del producto nuevo" required><option value="">Elegí la categoría del producto nuevo</option></select>
       <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
       <label for="merchant-photo">Foto del producto nuevo (opcional, hasta 2 MB)</label>
       <input id="merchant-photo" type="file" accept="image/jpeg,image/png,image/webp">
