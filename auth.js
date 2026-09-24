@@ -21,6 +21,7 @@
     $('auth-in').hidden = !active;
     $('auth-out').hidden = active;
     $('auth-user').textContent = active ? (session.user?.user_metadata?.nombre || session.user?.email || 'Tu cuenta') : '';
+    window.dispatchEvent(new Event('preciocerca:session'));
   }
   function save(result) {
     session = {
@@ -31,6 +32,15 @@
     localStorage.setItem(storageKey, JSON.stringify(session));
     show();
   }
+  async function getSession() {
+    if (!session?.refresh_token) return null;
+    if (session.expires_at <= Math.floor(Date.now() / 1000) + 60) {
+      try { save(await request('/token?grant_type=refresh_token', { refresh_token: session.refresh_token })); }
+      catch (_) { localStorage.removeItem(storageKey); session = null; show(); return null; }
+    }
+    return session;
+  }
+  window.PrecioCercaAuth = { getSession };
   async function restore() {
     try {
       session = JSON.parse(localStorage.getItem(storageKey) || 'null');
