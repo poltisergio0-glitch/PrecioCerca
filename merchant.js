@@ -41,6 +41,9 @@
       stores.forEach(store => $('merchant-edit-store').add(new Option(store.nombre, store.id)));
       if (stores.some(store => store.id === priorEdit)) $('merchant-edit-store').value = priorEdit;
       fillEditForm();
+      const categories = await api('/categorias?select=id,nombre&order=nombre.asc');
+      $('merchant-category').replaceChildren(new Option('Elegí la categoría del producto nuevo', ''));
+      categories.forEach(category => $('merchant-category').add(new Option(category.nombre, category.id)));
       const products = await api('/productos?select=id,nombre,marca&activo=eq.true&order=nombre.asc');
       priceRequest++;
       $('merchant-price-save').disabled = false;
@@ -60,11 +63,13 @@
     $('merchant-brand').value = '';
     $('merchant-image').value = '';
     $('merchant-photo').value = '';
+    $('merchant-category').value = '';
   }
   async function fillExistingPrice() {
     const current = ++priceRequest;
     const storeId = $('merchant-store').value;
     const productId = $('merchant-product').value;
+    $('merchant-category').disabled = Boolean(productId);
     clearPriceFields();
     const status = $('merchant-price-current');
     if (!productId) {
@@ -247,13 +252,15 @@
       if (productId && photo) throw new Error('La foto se agrega al crear un producto nuevo. Elegí “Nuevo producto”.');
       if (!productId) {
         const nombre = $('merchant-product-name').value.trim();
+        const categoryId = $('merchant-category').value;
+        if (!categoryId) throw new Error('Elegí una categoría para el producto nuevo.');
         if (!nombre) throw new Error('Elegí un producto existente o escribí el nombre de uno nuevo.');
         if (photo && $('merchant-image').value.trim()) throw new Error('Elegí una foto o un enlace, no ambos.');
         if (photo) message('Subiendo foto del producto…');
         const image = photo ? await uploadPhoto(photo) : $('merchant-image').value.trim() || null;
         const created = await api('/productos', { method: 'POST', body: {
           nombre, marca: $('merchant-brand').value.trim() || null,
-          imagen: image
+          categoria_id: categoryId, imagen: image
         } });
         productId = created[0].id;
       }
@@ -271,6 +278,7 @@
         actualizado_at: new Date().toISOString()
       } });
       $('merchant-price-form').reset();
+      $('merchant-category').disabled = false;
       await refresh();
       $('merchant-store').value = storeId;
       message('Precio guardado. Ya aparece en la búsqueda.');
