@@ -34,6 +34,7 @@
     .best-price{background:#d9f4e5;color:#075a37}
     .previous-price{font-size:14px;color:#59655f;margin-top:3px}
     .previous-price s{margin-right:6px}
+    .updated{font-size:13px;color:#59655f;margin-top:10px}
     .location{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
     .location span{font-size:13px;color:#56625c}
     .favorite{background:#e9f7f0;color:#0d724a;margin-top:12px;margin-right:10px}
@@ -140,7 +141,7 @@ let rows=[], userLocation=null;
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(id,nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,actualizado_at,productos(id,nombre,marca,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -156,7 +157,7 @@ async function load() {
 function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
-  let data=rows.filter(x => !q || (x.productos?.nombre||'').toLowerCase().includes(q));
+  let data=rows.filter(x => !q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q));
   if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta);
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   const distance=x => kmTo(x.comercios?.latitud,x.comercios?.longitud);
@@ -180,18 +181,19 @@ function render() {
     byProduct.get(key).push(row);
   }
   const groups=[...byProduct.values()].map(items=>({
-    items, name:items[0].productos?.nombre||'Producto',
+    items, name:items[0].productos?.nombre||'Producto', brand:items[0].productos?.marca||'',
     min:Math.min(...items.map(x=>Number(x.precio))),
     max:Math.max(...items.map(x=>Number(x.precio)))
   }));
   statusEl.textContent=data.length+' precios en '+groups.length+' '+(groups.length===1?'producto':'productos')+'.';
   results.innerHTML=groups.map(group=>'<section class="comparison"><h2>'+esc(group.name)+
+    (group.brand?' · '+esc(group.brand):'')+
     '</h2><p class="comparison-summary">'+group.items.length+' '+(group.items.length===1?'local':'locales')+
     ' · Desde $'+money(group.min)+(group.max>group.min?' · Diferencia de $'+money(group.max-group.min):'')+
     '</p>'+group.items.map(x=>{
     const d=x.comercios?.hace_delivery;
     return `<article class="card">
-      <div class="product">${esc(x.productos?.nombre||'Producto')}</div>
+      <div class="product">${esc(x.productos?.nombre||'Producto')}${x.productos?.marca?' · '+esc(x.productos.marca):''}</div>
       <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
       ${safeImage(x.productos?.imagen)?'<img src="'+esc(x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':''}
       <div class="price">$${money(x.precio)}</div>
@@ -205,6 +207,7 @@ function render() {
         <span class="pill">${d?'Delivery $'+money(x.comercios?.costo_delivery||0):'Sin delivery'}</span>
         ${d?'<span class="pill">Total $'+money(total(x))+'</span>':''}
       </div>
+      ${updatedLabel(x.actualizado_at)?'<div class="updated">'+updatedLabel(x.actualizado_at)+'</div>':''}
       ${x.productos?.id?'<button type="button" class="favorite" data-favorite-product="'+esc(x.productos.id)+'">'+(window.PrecioCercaFavorites?.has(x.productos.id)?'♥ Guardado':'♡ Guardar')+'</button>':''}
       ${phone(x.comercios?.whatsapp)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+phone(x.comercios.whatsapp)+'">Consultar por WhatsApp</a>':''}
       ${mapsUrl(x.comercios)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="'+esc(mapsUrl(x.comercios))+'">Cómo llegar · Google Maps</a>':''}
@@ -225,6 +228,12 @@ function mapsUrl(store){
   if(!destination)return '';
   const params=new URLSearchParams({api:'1',destination,travelmode:'driving',dir_action:'navigate'});
   return 'https://www.google.com/maps/dir/?'+params.toString();
+}
+function updatedLabel(value){
+  if(!value)return '';
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime()))return '';
+  return 'Precio actualizado: '+date.toLocaleString('es-AR',{dateStyle:'medium',timeStyle:'short'});
 }
 function phone(value){const digits=String(value||'').replace(/\D/g,'');return digits.length>=8&&digits.length<=15?digits:''}
 function safeImage(value){try{const url=new URL(value);return url.protocol==='https:'}catch{return false}}
