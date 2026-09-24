@@ -28,6 +28,10 @@
     .card img{width:100%;max-height:180px;object-fit:contain;margin-top:10px}
     .location{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
     .location span{font-size:13px;color:#56625c}
+    .favorite{background:#e9f7f0;color:#0d724a;margin-top:12px;margin-right:10px}
+    #favorites-filter{display:flex;align-items:center;gap:8px;margin:12px 0}
+    #favorites-filter[hidden]{display:none}
+    #favorites-message{font-size:14px;color:#43544a}
     .contact{display:inline-block;margin-top:12px;color:#08764b;font-weight:700}
     .empty{text-align:center;padding:35px 10px;color:#65716b}
   </style>
@@ -91,6 +95,8 @@
     <option value="name">Producto A–Z</option>
     <option value="distance">Más cercanos</option>
   </select>
+  <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
+  <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
   <section id="results"></section>
 </main>
@@ -103,7 +109,7 @@ let rows=[], userLocation=null;
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(id,nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -123,6 +129,7 @@ function render() {
   const distance=x => kmTo(x.comercios?.latitud,x.comercios?.longitud);
   const radius=document.getElementById('radius').value;
   if(userLocation && radius!=='all') data=data.filter(x=>distance(x)<=Number(radius));
+  if(document.getElementById('only-favorites').checked) data=data.filter(x=>window.PrecioCercaFavorites?.has(x.productos?.id));
   const total=x => Number(x.precio||0)+(x.comercios?.hace_delivery?Number(x.comercios?.costo_delivery||0):0);
   if(sort==='delivery') data.sort((a,b)=>total(a)-total(b));
   if(sort==='price') data.sort((a,b)=>Number(a.precio)-Number(b.precio));
@@ -143,6 +150,7 @@ function render() {
         <span class="pill">${d?'Delivery $'+money(x.comercios?.costo_delivery||0):'Sin delivery'}</span>
         ${d?'<span class="pill">Total $'+money(total(x))+'</span>':''}
       </div>
+      ${x.productos?.id?'<button type="button" class="favorite" data-favorite-product="'+esc(x.productos.id)+'">'+(window.PrecioCercaFavorites?.has(x.productos.id)?'♥ Guardado':'♡ Guardar')+'</button>':''}
       ${phone(x.comercios?.whatsapp)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+phone(x.comercios.whatsapp)+'">Consultar por WhatsApp</a>':''}
       ${mapsUrl(x.comercios)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="'+esc(mapsUrl(x.comercios))+'">Cómo llegar · Google Maps</a>':''}
     </article>`;
@@ -183,9 +191,11 @@ document.getElementById('nearby').onclick=()=>{
   );
 };
 window.addEventListener('preciocerca:prices-updated',load);
+window.addEventListener('preciocerca:favorites-updated',render);
 load();
 </script>
 <script src="auth.js" defer></script>
 <script src="merchant.js" defer></script>
+<script src="favorites.js" defer></script>
 </body>
 </html>
