@@ -26,6 +26,8 @@
     .merchant input,.merchant select{width:100%;margin:0}.merchant label{display:flex;align-items:center;gap:8px}
     .merchant label input{width:auto}.merchant h3{margin:12px 0 0}
     .card img{width:100%;max-height:180px;object-fit:contain;margin-top:10px}
+    .location{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+    .location span{font-size:13px;color:#56625c}
     .contact{display:inline-block;margin-top:12px;color:#08764b;font-weight:700}
     .empty{text-align:center;padding:35px 10px;color:#65716b}
   </style>
@@ -61,6 +63,7 @@
     <h3>Cargar un precio</h3>
     <form id="merchant-price-form">
       <select id="merchant-store" required><option value="">Elegí un local</option></select>
+      <button id="merchant-geolocate" class="secondary" type="button">Guardar ubicación de este local (estando ahí)</button>
       <select id="merchant-product"><option value="">Nuevo producto</option></select>
       <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
       <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
@@ -73,10 +76,18 @@
     <div id="merchant-message" role="status" aria-live="polite"></div>
   </details>
   <div class="search"><input id="q" placeholder="Ej: Coca-Cola, arroz, leche"><button id="search">Buscar</button></div>
+  <div class="location"><button id="nearby" type="button">Usar mi ubicación</button><span id="distance-status">Activá tu ubicación para ver distancias.</span></div>
+  <select id="radius">
+    <option value="all">Cualquier distancia</option>
+    <option value="2">Hasta 2 km</option>
+    <option value="5">Hasta 5 km</option>
+    <option value="10">Hasta 10 km</option>
+  </select>
   <select id="sort">
     <option value="delivery">Menor total + delivery</option>
     <option value="price">Menor precio</option>
     <option value="name">Producto A–Z</option>
+    <option value="distance">Más cercanos</option>
   </select>
   <div id="status">Conectando con la base de datos…</div>
   <section id="results"></section>
@@ -85,12 +96,12 @@
 const SUPABASE_URL='https://kgrnpypzounvgphjdrjg.supabase.co';
 const KEY='sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
 const statusEl=document.getElementById('status'), results=document.getElementById('results');
-let rows=[];
+let rows=[], userLocation=null;
 
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -107,9 +118,13 @@ function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
   let data=rows.filter(x => !q || (x.productos?.nombre||'').toLowerCase().includes(q));
+  const distance=x => kmTo(x.comercios?.latitud,x.comercios?.longitud);
+  const radius=document.getElementById('radius').value;
+  if(userLocation && radius!=='all') data=data.filter(x=>distance(x)<=Number(radius));
   const total=x => Number(x.precio||0)+(x.comercios?.hace_delivery?Number(x.comercios?.costo_delivery||0):0);
   if(sort==='delivery') data.sort((a,b)=>total(a)-total(b));
   if(sort==='price') data.sort((a,b)=>Number(a.precio)-Number(b.precio));
+  if(sort==='distance') data.sort((a,b)=>distance(a)-distance(b));
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
   if(!data.length) { results.innerHTML='<div class="empty">No encontramos productos con esa búsqueda.</div>'; return; }
   results.innerHTML=data.map(x=>{
@@ -122,12 +137,19 @@ function render() {
       <div class="meta">
         ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
         <span class="pill">Stock: ${x.stock??0}</span>
+        ${userLocation&&Number.isFinite(distance(x))?'<span class="pill">A '+distance(x).toLocaleString('es-AR',{maximumFractionDigits:1})+' km</span>':''}
         <span class="pill">${d?'Delivery $'+money(x.comercios?.costo_delivery||0):'Sin delivery'}</span>
         ${d?'<span class="pill">Total $'+money(total(x))+'</span>':''}
       </div>
       ${phone(x.comercios?.whatsapp)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+phone(x.comercios.whatsapp)+'">Consultar por WhatsApp</a>':''}
     </article>`;
   }).join('');
+}
+function kmTo(lat,lon){
+  if(!userLocation||lat==null||lon==null)return Infinity;
+  const rad=Math.PI/180, a=(Number(lat)-userLocation.lat)*rad, b=(Number(lon)-userLocation.lon)*rad;
+  const hav=Math.sin(a/2)**2+Math.cos(userLocation.lat*rad)*Math.cos(Number(lat)*rad)*Math.sin(b/2)**2;
+  return 12742*Math.asin(Math.min(1,Math.sqrt(hav)));
 }
 function phone(value){const digits=String(value||'').replace(/\D/g,'');return digits.length>=8&&digits.length<=15?digits:''}
 function safeImage(value){try{const url=new URL(value);return url.protocol==='https:'}catch{return false}}
@@ -136,6 +158,18 @@ function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;',
 document.getElementById('search').onclick=render;
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
 document.getElementById('sort').onchange=render;
+document.getElementById('radius').onchange=render;
+document.getElementById('nearby').onclick=()=>{
+  const label=document.getElementById('distance-status');
+  if(!navigator.geolocation){label.textContent='Este navegador no permite obtener la ubicación.';return}
+  label.textContent='Buscando tu ubicación…';
+  navigator.geolocation.getCurrentPosition(
+    position=>{userLocation={lat:position.coords.latitude,lon:position.coords.longitude};
+      label.textContent='Distancias aproximadas en línea recta.';render()},
+    ()=>{label.textContent='No se pudo obtener la ubicación. Revisá el permiso de ubicación.'},
+    {enableHighAccuracy:true,timeout:15000,maximumAge:60000}
+  );
+};
 window.addEventListener('preciocerca:prices-updated',load);
 load();
 </script>
