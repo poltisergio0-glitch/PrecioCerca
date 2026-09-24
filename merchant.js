@@ -2,7 +2,7 @@
   const BASE = 'https://kgrnpypzounvgphjdrjg.supabase.co/rest/v1';
   const KEY = 'sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
   const $ = id => document.getElementById(id);
-  let stores = [], pendingLocation = null;
+  let stores = [], pendingLocation = null, priceRequest = 0;
   function message(text) { $('merchant-message').textContent = text; }
   function fillEditForm() {
     const store = stores.find(item => item.id === $('merchant-edit-store').value);
@@ -29,7 +29,7 @@
   async function refresh() {
     const session = await window.PrecioCercaAuth.getSession();
     $('merchant-panel').hidden = !session;
-    if (!session) { stores = []; $('merchant-edit-store').value = ''; fillEditForm(); return; }
+    if (!session) { stores = []; priceRequest++; $('merchant-edit-store').value = ''; fillEditForm(); return; }
     try {
       const prior = $('merchant-store').value;
       const priorEdit = $('merchant-edit-store').value;
@@ -47,6 +47,57 @@
       message(stores.length ? 'Elegí tu local para cargar un precio.' : 'Registrá tu local para comenzar.');
     } catch (error) { message(error.message); }
   }
+  function clearPriceFields() {
+    $('merchant-price').value = '';
+    $('merchant-stock').value = '';
+    $('merchant-previous-price').value = '';
+    $('merchant-offer').checked = false;
+    $('merchant-product-name').value = '';
+    $('merchant-brand').value = '';
+    $('merchant-image').value = '';
+    $('merchant-photo').value = '';
+  }
+  async function fillExistingPrice() {
+    const current = ++priceRequest;
+    const storeId = $('merchant-store').value;
+    const productId = $('merchant-product').value;
+    clearPriceFields();
+    const status = $('merchant-price-current');
+    if (!productId) {
+      status.textContent = 'Escribí el nombre para crear un producto nuevo.';
+      $('merchant-price-save').disabled = false;
+      return;
+    }
+    if (!stores.some(store => store.id === storeId)) {
+      status.textContent = 'Elegí primero tu local.';
+      $('merchant-price-save').disabled = false;
+      return;
+    }
+    $('merchant-price-save').disabled = true;
+    status.textContent = 'Buscando el precio guardado…';
+    try {
+      const rows = await api('/precios?select=precio,precio_anterior,stock,en_oferta&producto_id=eq.' +
+        encodeURIComponent(productId) + '&comercio_id=eq.' + encodeURIComponent(storeId) + '&limit=1');
+      if (current !== priceRequest || storeId !== $('merchant-store').value ||
+          productId !== $('merchant-product').value) return;
+      const row = rows[0];
+      if (row) {
+        $('merchant-price').value = row.precio;
+        $('merchant-stock').value = row.stock ?? 0;
+        $('merchant-offer').checked = Boolean(row.en_oferta);
+        $('merchant-previous-price').value = row.en_oferta && row.precio_anterior != null &&
+          Number(row.precio_anterior) > Number(row.precio) ? row.precio_anterior : '';
+        status.textContent = 'Precio encontrado. Podés cambiarlo y guardar.';
+      } else status.textContent = 'Este producto todavía no tiene precio en tu local.';
+      $('merchant-price-save').disabled = false;
+    } catch (error) {
+      if (current !== priceRequest) return;
+      status.textContent = 'No se pudo cargar el precio. Elegí el producto otra vez.';
+      message(error.message);
+    }
+  }
+  $('merchant-store').addEventListener('change', fillExistingPrice);
+  $('merchant-product').addEventListener('change', fillExistingPrice);
   $('merchant-edit-store').addEventListener('change', fillEditForm);
   $('merchant-edit-form').addEventListener('submit', async event => {
     event.preventDefault();
