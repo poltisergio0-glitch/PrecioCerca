@@ -149,7 +149,7 @@
       <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
       <select id="merchant-category" aria-label="Categoría del producto nuevo" required><option value="">Elegí la categoría del producto nuevo</option></select>
       <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
-      <label for="merchant-photo">Foto del producto nuevo (opcional, hasta 2 MB)</label>
+      <label for="merchant-photo">Foto de este producto en tu local (opcional, hasta 2 MB)</label>
       <input id="merchant-photo" type="file" accept="image/jpeg,image/png,image/webp">
       <input id="merchant-image" type="url" placeholder="O enlace HTTPS de foto (opcional)">
       <input id="merchant-price" type="number" min="0" step="0.01" placeholder="Precio en pesos" required>
@@ -170,7 +170,7 @@ let rows=[], userLocation=null, selectedCategory="Todas";
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,imagen,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -257,9 +257,9 @@ function render() {
       <div class="product">${esc(x.productos?.nombre||'Producto')}${x.productos?.marca?' · '+esc(x.productos.marca):''}</div>
       <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
       <div class="visual">
-        ${safeImage(x.productos?.imagen)?'<img src="'+esc(x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':'<span class="illustration" aria-label="Ilustración del producto" role="img">'+iconFor(x.productos)+'</span>'}
+        ${safeImage(x.imagen||x.productos?.imagen)?'<img src="'+esc(x.imagen||x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':'<span class="illustration" aria-label="Ilustración del producto" role="img">'+iconFor(x.productos)+'</span>'}
       </div>
-      ${!safeImage(x.productos?.imagen)?'<div class="visual-note">Ilustración · el comercio aún no cargó foto</div>':''}
+      ${!safeImage(x.imagen||x.productos?.imagen)?'<div class="visual-note">Ilustración · el comercio aún no cargó foto</div>':''}
       <div class="price">$${money(x.precio)}</div>
       ${x.en_oferta&&x.precio_anterior!=null&&Number(x.precio_anterior)>Number(x.precio)?
         '<div class="previous-price">Antes <s>$'+money(x.precio_anterior)+'</s> Ahorrás $'+money(Number(x.precio_anterior)-Number(x.precio))+'</div>':''}
