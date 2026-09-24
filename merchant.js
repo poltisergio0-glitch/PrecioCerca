@@ -48,6 +48,7 @@
       priceRequest++;
       $('merchant-price-save').disabled = false;
       clearPriceFields();
+      $('merchant-category').disabled = false;
       $('merchant-price-current').textContent = 'Elegí un producto para cargar o actualizar su precio.';
       $('merchant-product').replaceChildren(new Option('Nuevo producto', ''));
       products.forEach(product => $('merchant-product').add(new Option(product.nombre + (product.marca ? ' · ' + product.marca : ''), product.id)));
