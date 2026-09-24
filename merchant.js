@@ -42,6 +42,10 @@
       if (stores.some(store => store.id === priorEdit)) $('merchant-edit-store').value = priorEdit;
       fillEditForm();
       const products = await api('/productos?select=id,nombre,marca&activo=eq.true&order=nombre.asc');
+      priceRequest++;
+      $('merchant-price-save').disabled = false;
+      clearPriceFields();
+      $('merchant-price-current').textContent = 'Elegí un producto para cargar o actualizar su precio.';
       $('merchant-product').replaceChildren(new Option('Nuevo producto', ''));
       products.forEach(product => $('merchant-product').add(new Option(product.nombre + (product.marca ? ' · ' + product.marca : ''), product.id)));
       message(stores.length ? 'Elegí tu local para cargar un precio.' : 'Registrá tu local para comenzar.');
