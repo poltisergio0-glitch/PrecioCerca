@@ -21,6 +21,12 @@
     .account input{width:100%}.account .actions{display:flex;flex-wrap:wrap;gap:8px}
     .account button.secondary{background:#e9f7f0;color:#0d724a}
     #auth-message{font-size:14px;margin-top:10px;color:#43544a}
+    .merchant{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:18px 0}
+    .merchant summary{font-weight:800;cursor:pointer}.merchant form{display:grid;gap:9px;margin:14px 0 20px}
+    .merchant input,.merchant select{width:100%;margin:0}.merchant label{display:flex;align-items:center;gap:8px}
+    .merchant label input{width:auto}.merchant h3{margin:12px 0 0}
+    .card img{width:100%;max-height:180px;object-fit:contain;margin-top:10px}
+    .contact{display:inline-block;margin-top:12px;color:#08764b;font-weight:700}
     .empty{text-align:center;padding:35px 10px;color:#65716b}
   </style>
 </head>
@@ -41,6 +47,31 @@
     <div id="auth-in" hidden><span id="auth-user"></span> <button class="secondary" id="auth-logout" type="button">Salir</button></div>
     <div id="auth-message" role="status" aria-live="polite">Podés comparar precios sin crear una cuenta.</div>
   </section>
+  <details class="merchant" id="merchant-panel" hidden>
+    <summary>Mi comercio · cargar productos y precios</summary>
+    <h3>Registrar un local</h3>
+    <form id="merchant-store-form">
+      <input id="merchant-store-name" placeholder="Nombre del comercio" maxlength="100" required>
+      <input id="merchant-address" placeholder="Dirección del local" maxlength="200" required>
+      <input id="merchant-whatsapp" type="tel" placeholder="WhatsApp con código de país (ej: 549351...)" inputmode="tel">
+      <label><input id="merchant-delivery" type="checkbox"> Hago delivery</label>
+      <input id="merchant-delivery-cost" type="number" min="0" step="0.01" placeholder="Costo de delivery en pesos">
+      <button id="merchant-store-save" type="submit">Guardar local</button>
+    </form>
+    <h3>Cargar un precio</h3>
+    <form id="merchant-price-form">
+      <select id="merchant-store" required><option value="">Elegí un local</option></select>
+      <select id="merchant-product"><option value="">Nuevo producto</option></select>
+      <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
+      <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
+      <input id="merchant-image" type="url" placeholder="Enlace HTTPS de foto (opcional)">
+      <input id="merchant-price" type="number" min="0" step="0.01" placeholder="Precio en pesos" required>
+      <input id="merchant-stock" type="number" min="0" step="1" placeholder="Unidades disponibles" required>
+      <label><input id="merchant-offer" type="checkbox"> Está en oferta</label>
+      <button id="merchant-price-save" type="submit">Guardar precio</button>
+    </form>
+    <div id="merchant-message" role="status" aria-live="polite"></div>
+  </details>
   <div class="search"><input id="q" placeholder="Ej: Coca-Cola, arroz, leche"><button id="search">Buscar</button></div>
   <select id="sort">
     <option value="delivery">Menor total + delivery</option>
@@ -59,7 +90,7 @@ let rows=[];
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre),comercios(nombre,hace_delivery,costo_delivery,whatsapp)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,productos(nombre,imagen),comercios(nombre,hace_delivery,costo_delivery,whatsapp)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -86,6 +117,7 @@ function render() {
     return `<article class="card">
       <div class="product">${esc(x.productos?.nombre||'Producto')}</div>
       <div class="store">${esc(x.comercios?.nombre||'Comercio')}</div>
+      ${safeImage(x.productos?.imagen)?'<img src="'+esc(x.productos.imagen)+'" alt="Foto de '+esc(x.productos?.nombre||'producto')+'" loading="lazy">':''}
       <div class="price">$${money(x.precio)}</div>
       <div class="meta">
         ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
@@ -93,16 +125,21 @@ function render() {
         <span class="pill">${d?'Delivery $'+money(x.comercios?.costo_delivery||0):'Sin delivery'}</span>
         ${d?'<span class="pill">Total $'+money(total(x))+'</span>':''}
       </div>
+      ${phone(x.comercios?.whatsapp)?'<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+phone(x.comercios.whatsapp)+'">Consultar por WhatsApp</a>':''}
     </article>`;
   }).join('');
 }
+function phone(value){const digits=String(value||'').replace(/\D/g,'');return digits.length>=8&&digits.length<=15?digits:''}
+function safeImage(value){try{const url=new URL(value);return url.protocol==='https:'}catch{return false}}
 function money(n){return Number(n||0).toLocaleString('es-AR',{maximumFractionDigits:0})}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.getElementById('search').onclick=render;
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
 document.getElementById('sort').onchange=render;
+window.addEventListener('preciocerca:prices-updated',load);
 load();
 </script>
 <script src="auth.js" defer></script>
+<script src="merchant.js" defer></script>
 </body>
 </html>
