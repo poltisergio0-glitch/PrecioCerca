@@ -37,6 +37,9 @@
     .location{display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap}
     .location span{font-size:13px;color:#56625c}
     .favorite{background:#e9f7f0;color:#0d724a;margin-top:12px;margin-right:10px}
+    #filters{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0}
+    #filters label{display:flex;align-items:center;gap:6px;font-size:14px}
+    #filters input{flex:none;margin:0}
     #favorites-filter{display:flex;align-items:center;gap:8px;margin:12px 0}
     #favorites-filter[hidden]{display:none}
     #favorites-message{font-size:14px;color:#43544a}
@@ -119,6 +122,10 @@
     <option value="name">Producto A–Z</option>
     <option value="distance">Más cercanos</option>
   </select>
+  <div id="filters">
+    <label><input type="checkbox" id="only-offers"> Solo ofertas</label>
+    <label><input type="checkbox" id="only-delivery"> Con delivery</label>
+  </div>
   <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
   <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
@@ -150,6 +157,8 @@ function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
   let data=rows.filter(x => !q || (x.productos?.nombre||'').toLowerCase().includes(q));
+  if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta);
+  if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   const distance=x => kmTo(x.comercios?.latitud,x.comercios?.longitud);
   const radius=document.getElementById('radius').value;
   if(userLocation && radius!=='all') data=data.filter(x=>distance(x)<=Number(radius));
@@ -159,7 +168,11 @@ function render() {
   if(sort==='price') data.sort((a,b)=>Number(a.precio)-Number(b.precio));
   if(sort==='distance') data.sort((a,b)=>distance(a)-distance(b));
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
-  if(!data.length) { results.innerHTML='<div class="empty">No encontramos productos con esa búsqueda.</div>'; return; }
+  if(!data.length) {
+    statusEl.textContent='Sin resultados con esos filtros.';
+    results.innerHTML='<div class="empty">No encontramos productos con esa búsqueda y esos filtros.</div>';
+    return;
+  }
   const byProduct=new Map();
   for(const row of data) {
     const key=row.productos?.id || row.productos?.nombre || 'Producto';
@@ -171,6 +184,7 @@ function render() {
     min:Math.min(...items.map(x=>Number(x.precio))),
     max:Math.max(...items.map(x=>Number(x.precio)))
   }));
+  statusEl.textContent=data.length+' precios en '+groups.length+' '+(groups.length===1?'producto':'productos')+'.';
   results.innerHTML=groups.map(group=>'<section class="comparison"><h2>'+esc(group.name)+
     '</h2><p class="comparison-summary">'+group.items.length+' '+(group.items.length===1?'local':'locales')+
     ' · Desde $'+money(group.min)+(group.max>group.min?' · Diferencia de $'+money(group.max-group.min):'')+
@@ -217,7 +231,10 @@ function safeImage(value){try{const url=new URL(value);return url.protocol==='ht
 function money(n){return Number(n||0).toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:2})}
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 document.getElementById('search').onclick=render;
+document.getElementById('q').addEventListener('input',render);
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
+document.getElementById('only-offers').addEventListener('change',render);
+document.getElementById('only-delivery').addEventListener('change',render);
 document.getElementById('sort').onchange=render;
 document.getElementById('radius').onchange=render;
 document.getElementById('nearby').onclick=()=>{
