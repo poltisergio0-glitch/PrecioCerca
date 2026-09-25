@@ -1,4 +1,4 @@
-# PrecioCerca: piloto comercial y publicación
+# Ofertas Serca: piloto comercial y publicación
 
 ## Modelo para el piloto
 
