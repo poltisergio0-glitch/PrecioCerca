@@ -22,7 +22,7 @@
     .example-toggle{display:flex;align-items:center;gap:8px;margin:12px 0;color:#43544a}.example-toggle input{flex:none;margin:0}.filter-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.filter-actions button{background:#e6f4e9;color:#075a37}.merchant-cta{border-radius:16px;background:#e7f5e9;padding:16px;margin:20px 0}.merchant-cta h2{margin:0 0 6px;font-size:20px}.merchant-cta p{margin:0 0 10px}.merchant-cta a{display:inline-block;background:#118a5a;color:white;padding:11px 15px;border-radius:12px;text-decoration:none;font-weight:700}
     .offer-spotlight{background:#fff8e8;border:1px solid #f2d28a;border-radius:16px;padding:14px;margin:12px 0}.offer-spotlight h3{margin:0 0 8px}.offer-spotlight p{margin:5px 0}
     .offer-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px}.offer-entry button{background:#f9b82e;color:#33240c}.offer-entry span{color:#43544a;font-size:14px}
-    .merchant-help{color:#43544a;line-height:1.5;margin:8px 0}.merchant .offer-fields{display:grid;gap:8px;background:#fff9e9;padding:12px;border-radius:12px}
+    .merchant .new-product-fields{display:grid;gap:9px}.merchant .new-product-fields[hidden]{display:none}.merchant-help{color:#43544a;line-height:1.5;margin:8px 0}.merchant .offer-fields{display:grid;gap:8px;background:#fff9e9;padding:12px;border-radius:12px}
     .account{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:18px 0}
     .account h2{margin:0 0 12px;font-size:20px}.account form{display:grid;gap:9px}
     .account input{width:100%}.account .actions{display:flex;flex-wrap:wrap;gap:8px}
@@ -152,7 +152,7 @@
     <div id="auth-message" role="status" aria-live="polite">Podés comparar precios sin crear una cuenta.</div>
   </section>
   <details class="merchant" id="merchant-panel" hidden>
-    <summary>Mi comercio · cargar productos y precios</summary>
+    <summary>Mi comercio · publicar productos, precios y ofertas</summary>
     <h3>Registrar un local</h3>
     <form id="merchant-store-form">
       <input id="merchant-store-name" placeholder="Nombre del comercio" maxlength="100" required>
@@ -181,9 +181,10 @@
       <button id="merchant-geolocate" class="secondary" type="button">Actualizar GPS del local elegido</button>
       <select id="merchant-product"><option value="">Nuevo producto</option></select>
       <small id="merchant-price-current" role="status" aria-live="polite">Elegí un producto para cargar o actualizar su precio.</small>
+      <div id="merchant-new-product-fields" class="new-product-fields"><strong>Datos del producto nuevo</strong>
       <input id="merchant-product-name" placeholder="Nombre del producto nuevo" maxlength="150">
       <select id="merchant-category" aria-label="Categoría del producto nuevo" required><option value="">Elegí la categoría del producto nuevo</option></select>
-      <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100">
+      <input id="merchant-brand" placeholder="Marca (opcional)" maxlength="100"></div>
       <label for="merchant-photo">Foto de este producto en tu local (opcional, hasta 2 MB)</label>
       <input id="merchant-photo" type="file" accept="image/jpeg,image/png,image/webp">
       <input id="merchant-image" type="url" placeholder="O enlace HTTPS de foto (opcional)">
@@ -443,7 +444,7 @@ loadCategories();
 </script>
 <script src="stores.js?v=5" defer></script>
 <script src="auth.js?v=2" defer></script>
-<script src="merchant.js?v=3" defer></script>
+<script src="merchant.js?v=4" defer></script>
 <script src="favorites.js" defer></script>
 <script src="shopping-list.js?v=4" defer></script>
 <script src="store-details.js?v=2" defer></script>
