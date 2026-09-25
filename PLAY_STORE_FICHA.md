@@ -1,8 +1,8 @@
-# Borrador de ficha para Google Play — PrecioCerca
+# Borrador de ficha para Google Play — Ofertas Serca
 
 ## Datos de la app
 
-- Nombre: PrecioCerca
+- Nombre: Ofertas Serca
 - Categoría propuesta: Compras
 - Idioma principal: Español (Argentina)
 - Precio de descarga: Gratis
