@@ -60,6 +60,7 @@
     .basket-items{display:flex;flex-wrap:wrap;gap:7px}.basket-items button,.add-list{background:#e4f5e9;color:#075a37}
     .basket .card{box-shadow:none}.basket .card h3{margin:0 0 8px}.add-list{margin:5px 0 8px}
     .basket-total{font-weight:800;font-size:21px;color:#095b39}
+    #basket-jump{position:fixed;bottom:14px;right:14px;z-index:20;box-shadow:0 5px 20px #0004}#basket-jump[hidden]{display:none}
     .basket-mode{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0}.basket-mode label{display:flex;align-items:center;gap:6px;font-weight:650}
     .basket-mode input{flex:none;margin:0}.recommended{border:2px solid #118a5a;background:#f4fcf6}
     .basket .recommendation{font-weight:800;color:#075a37}.basket details summary{cursor:pointer;color:#875600;font-weight:700;margin:12px 0}
@@ -119,6 +120,7 @@
   <div id="status">Conectando con la base de datos…</div>
   <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 ¿Dónde conviene hacer tu compra?</h2><p>Elegí lo que necesitás y compará el total en un solo comercio.</p><div id="basket-content" aria-live="polite"></div></section>
   <section id="results"></section>
+  <button id="basket-jump" type="button" hidden>Comparar mi compra</button>
   <dialog id="store-detail" aria-labelledby="detail-title"><button id="detail-close" type="button">Cerrar ×</button><div id="detail-content"></div></dialog>
   <section class="directory" aria-labelledby="directory-title">
     <h2 id="directory-title">Buscar comercios</h2>
