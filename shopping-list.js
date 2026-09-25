@@ -36,6 +36,27 @@
         esc(mapsUrl(store)) + '">Cómo llegar · Google Maps</a>' : '') +
       '</article>';
   }
+  function partialCard(item, names) {
+    const available = [...item.prices.values()];
+    const missing = names.filter(product => !item.prices.has(product.id));
+    const store = item.store;
+    const distance = kmTo(store.latitud, store.longitud);
+    const subtotal = available.reduce((sum, row) => sum + Number(row.precio), 0);
+    return '<article class="card"><h3>' + esc(store.nombre) + '</h3>' +
+      '<p><strong>Tiene ' + available.length + ' de ' + names.length + ' productos elegidos</strong></p>' +
+      (userLocation && Number.isFinite(distance) ? '<p>A ' +
+        distance.toLocaleString('es-AR',{maximumFractionDigits:1}) + ' km aproximadamente</p>' : '') +
+      '<div>' + available.map(row => '<div>' + esc(row.productos.nombre) + ': $' +
+        money(row.precio) + '</div>').join('') + '</div>' +
+      '<p>Falta: ' + missing.map(product => esc(product.name)).join(', ') + '.</p>' +
+      '<p><strong>Subtotal de los productos disponibles: $' + money(subtotal) +
+        '</strong> · No es el total de tu compra.</p>' +
+      (phone(store.whatsapp) ? '<a class="contact" target="_blank" rel="noopener noreferrer" href="https://wa.me/' +
+        phone(store.whatsapp) + '">Consultar disponibilidad por WhatsApp</a> ' : '') +
+      (mapsUrl(store) ? '<a class="contact" target="_blank" rel="noopener noreferrer" href="' +
+        esc(mapsUrl(store)) + '">Cómo llegar · Google Maps</a>' : '') +
+      '</article>';
+  }
   function renderPurchase() {
     jump.hidden = !selected.size;
     jump.textContent = 'Comparar mi compra (' + selected.size + ')';
@@ -66,6 +87,10 @@
     const complete = [...stores.values()].filter(item => item.prices.size === selected.size);
     const real = complete.filter(item => !/demo/i.test(item.store.nombre)).sort((a,b) => total(a)-total(b));
     const examples = complete.filter(item => /demo/i.test(item.store.nombre)).sort((a,b) => total(a)-total(b));
+    const partial = [...stores.values()].filter(item => !/demo/i.test(item.store.nombre) &&
+      item.prices.size > 0 && item.prices.size < selected.size)
+      .sort((a,b) => b.prices.size-a.prices.size ||
+        a.store.nombre.localeCompare(b.store.nombre,'es'));
     const savings = real.length > 1 ? total(real[1])-total(real[0]) : 0;
     container.innerHTML =
       '<div class="basket-items">' + names.map(item =>
@@ -85,7 +110,10 @@
           real.slice(1).map(item => card(item, false)).join('') + '</details>' : '') :
         '<p role="status">Todavía ningún comercio real ' +
         (mode === 'delivery' ? 'con delivery ' : '') +
-        'tiene todos estos productos con stock. Probá cambiar la modalidad o los productos elegidos.</p>') +
+        'tiene todos estos productos con stock.</p>' +
+        (partial.length ? '<p>Estos locales tienen parte de tu compra. Podés consultarles por los productos que faltan:</p>' +
+          partial.slice(0,3).map(item => partialCard(item,names)).join('') : 
+          '<p>Probá cambiar la modalidad o los productos elegidos.</p>')) +
       (examples.length ? '<details><summary>Ver ejemplo de comparación con datos de prueba</summary>' +
         '<p>Estos comercios son de demostración; sus precios no son ofertas reales.</p>' +
         examples.map(item => card(item, false)).join('') + '</details>' : '');
