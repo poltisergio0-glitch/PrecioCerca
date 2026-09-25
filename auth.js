@@ -91,5 +91,21 @@
     if (token) try { await request('/logout', {}, token); }
     catch (error) { console.warn('La sesión local ya se cerró.', error); }
   });
+  $('auth-delete').addEventListener('click', async () => {
+    const current = await getSession();
+    if (!current) { notice('Ingresá para solicitar la eliminación de tu cuenta.'); return; }
+    if (!confirm('¿Solicitar la eliminación de tu cuenta, locales, productos publicados y datos asociados? Esta solicitud será irreversible una vez procesada.')) return;
+    const button = $('auth-delete'); button.disabled = true;
+    try {
+      const response = await fetch('https://kgrnpypzounvgphjdrjg.supabase.co/rest/v1/solicitudes_eliminacion', {
+        method:'POST', headers:{apikey:KEY, Authorization:'Bearer '+current.access_token,
+          'Content-Type':'application/json', Prefer:'resolution=ignore-duplicates,return=minimal'},
+        body:JSON.stringify({usuario_id:current.user.id})
+      });
+      if (!response.ok) throw new Error('No pudimos registrar la solicitud. Intentá de nuevo.');
+      notice('Solicitud registrada. Eliminaremos tu cuenta y sus datos asociados; podés cerrar sesión.');
+    } catch (error) { notice(error.message); }
+    finally { button.disabled = false; }
+  });
   restore();
 })();
