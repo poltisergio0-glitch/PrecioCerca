@@ -60,6 +60,9 @@
     .basket-items{display:flex;flex-wrap:wrap;gap:7px}.basket-items button,.add-list{background:#e4f5e9;color:#075a37}
     .basket .card{box-shadow:none}.basket .card h3{margin:0 0 8px}.add-list{margin:5px 0 8px}
     .basket-total{font-weight:800;font-size:21px;color:#095b39}
+    .basket-mode{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0}.basket-mode label{display:flex;align-items:center;gap:6px;font-weight:650}
+    .basket-mode input{flex:none;margin:0}.recommended{border:2px solid #118a5a;background:#f4fcf6}
+    .basket .recommendation{font-weight:800;color:#075a37}.basket details summary{cursor:pointer;color:#875600;font-weight:700;margin:12px 0}
     .price-card{cursor:pointer}.price-card:focus-visible{outline:3px solid #118a5a;outline-offset:3px}
     .price-card .store{color:#095b39;font-weight:700}.open-details{display:block;margin:12px 0 2px}
     #store-detail{width:min(92vw,510px);max-height:85vh;border:0;border-radius:20px;padding:22px;box-shadow:0 18px 60px #0005;color:#17201c}
@@ -114,7 +117,7 @@
   <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
   <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
-  <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 Compará tu lista de compras</h2><p>Agregá productos para ver cuánto sale la compra completa en cada comercio.</p><div id="basket-content" aria-live="polite"></div></section>
+  <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 ¿Dónde conviene hacer tu compra?</h2><p>Elegí lo que necesitás y compará el total en un solo comercio.</p><div id="basket-content" aria-live="polite"></div></section>
   <section id="results"></section>
   <dialog id="store-detail" aria-labelledby="detail-title"><button id="detail-close" type="button">Cerrar ×</button><div id="detail-content"></div></dialog>
   <section class="directory" aria-labelledby="directory-title">
@@ -281,7 +284,7 @@ function render() {
     (group.brand?' · '+esc(group.brand):'')+
     '</h2><p class="comparison-summary">'+group.items.length+' '+(group.items.length===1?'local':'locales')+
     ' · Desde $'+money(group.min)+(group.max>group.min?' · Diferencia de $'+money(group.max-group.min):'')+
-    '</p>'+(group.items[0].productos?.id?'<button type="button" class="add-list" data-list-product="'+esc(group.items[0].productos.id)+'">'+(window.PrecioCercaList?.has(group.items[0].productos.id)?'✓ En mi lista':'＋ Agregar a mi lista')+'</button>':'')+group.items.map(x=>{
+    '</p>'+(group.items[0].productos?.id?'<button type="button" class="add-list" data-list-product="'+esc(group.items[0].productos.id)+'">'+(window.PrecioCercaList?.has(group.items[0].productos.id)?'✓ Producto elegido':'＋ Elegir para comparar')+'</button>':'')+group.items.map(x=>{
     const d=x.comercios?.hace_delivery;
     return `<article class="card price-card" tabindex="0" data-price-store="${esc(x.comercios?.id||'')}" data-price-product="${esc(x.productos?.id||'')}" aria-label="Ver ${esc(x.productos?.nombre||'producto')} en ${esc(x.comercios?.nombre||'comercio')}">
       <div class="product">${esc(x.productos?.nombre||'Producto')}${x.productos?.marca?' · '+esc(x.productos.marca):''}</div>
@@ -397,7 +400,7 @@ loadCategories();
 <script src="auth.js?v=2" defer></script>
 <script src="merchant.js?v=2" defer></script>
 <script src="favorites.js" defer></script>
-<script src="shopping-list.js?v=2" defer></script>
+<script src="shopping-list.js?v=3" defer></script>
 <script src="store-details.js?v=2" defer></script>
 </body>
 </html>
