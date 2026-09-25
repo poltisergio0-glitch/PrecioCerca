@@ -212,15 +212,17 @@
 const SUPABASE_URL='https://kgrnpypzounvgphjdrjg.supabase.co';
 const KEY='sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
 const statusEl=document.getElementById('status'), results=document.getElementById('results');
-let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas", offersRealOnly=false;
+let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas", offersRealOnly=false, pricesLoaded=false;
 
 async function load() {
+  pricesLoaded=false;
   statusEl.textContent='Conectando con la base de datos…';
   try {
     const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,oferta_hasta,stock,imagen,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,descripcion,telefono,horario,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
+    pricesLoaded=true;
     statusEl.textContent='Conectado ✓';
     renderCategories();
     render();
@@ -295,8 +297,8 @@ function render() {
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
   if(!q && sort==='price' && !document.getElementById('only-offers').checked) data.sort((a,b)=>Number(Boolean(b.en_oferta && !/demo/i.test(b.comercios?.nombre||'')))-Number(Boolean(a.en_oferta && !/demo/i.test(a.comercios?.nombre||''))));
   if(!data.length) {
-    statusEl.textContent=rows.length?'Sin resultados con esos filtros.':'Cargando precios…';
-    results.innerHTML='<div class="empty">'+(!rows.length?'Cargando productos…':selectedCategory!=='Todas'?'Todavía no hay productos de '+esc(selectedCategory)+' con esos filtros.':'No encontramos productos con esa búsqueda y esos filtros. Probá “Ver todos los productos” o activá los comercios de demostración.')+'</div>';
+    statusEl.textContent=rows.length?'Sin resultados con esos filtros.':pricesLoaded?'Todavía no hay productos publicados.':'Cargando precios…';
+    results.innerHTML='<div class="empty">'+(!pricesLoaded?'Cargando productos…':!rows.length?'Todavía no hay productos publicados.':selectedCategory!=='Todas'?'Todavía no hay productos de '+esc(selectedCategory)+' con esos filtros.':'No encontramos productos con esa búsqueda y esos filtros. Probá “Ver todos los productos” o activá los comercios de demostración.')+'</div>';
     return;
   }
   const byProduct=new Map();
@@ -455,7 +457,7 @@ loadCategories();
 <script src="auth.js?v=2" defer></script>
 <script src="merchant.js?v=6" defer></script>
 <script src="favorites.js" defer></script>
-<script src="shopping-list.js?v=5" defer></script>
+<script src="shopping-list.js?v=6" defer></script>
 <script src="store-details.js?v=2" defer></script>
 </body>
 </html>
