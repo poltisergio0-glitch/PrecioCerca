@@ -94,7 +94,7 @@
   $('auth-delete').addEventListener('click', async () => {
     const current = await getSession();
     if (!current) { notice('Ingresá para solicitar la eliminación de tu cuenta.'); return; }
-    if (!confirm('¿Solicitar la eliminación de tu cuenta, locales, productos publicados y datos asociados? Esta solicitud será irreversible una vez procesada.')) return;
+    if (!confirm('¿Eliminar definitivamente tu cuenta, locales, precios, fotos propias y datos asociados? Esta acción no se puede deshacer.')) return;
     const button = $('auth-delete'); button.disabled = true;
     try {
       const response = await fetch('https://kgrnpypzounvgphjdrjg.supabase.co/rest/v1/solicitudes_eliminacion', {
@@ -103,7 +103,13 @@
         body:JSON.stringify({usuario_id:current.user.id})
       });
       if (!response.ok) throw new Error('No pudimos registrar la solicitud. Intentá de nuevo.');
-      notice('Solicitud registrada. Eliminaremos tu cuenta y sus datos asociados; podés cerrar sesión.');
+      const deletion = await fetch('https://kgrnpypzounvgphjdrjg.supabase.co/functions/v1/delete-account', {
+        method:'POST', headers:{ apikey:KEY, Authorization:'Bearer '+current.access_token }
+      });
+      const outcome = await deletion.json().catch(() => ({}));
+      if (!deletion.ok || !outcome.deleted) throw new Error(outcome.error || 'Tu solicitud quedó registrada, pero la eliminación todavía no se completó. Intentá otra vez.');
+      localStorage.removeItem(storageKey); session = null; show();
+      notice('Cuenta y datos eliminados.');
     } catch (error) { notice(error.message); }
     finally { button.disabled = false; }
   });
