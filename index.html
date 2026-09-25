@@ -19,6 +19,7 @@
     .product{font-weight:800;font-size:19px} .store{margin-top:4px;color:#56625c} .price{font-size:25px;font-weight:850;margin-top:12px}
     .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px} .pill{background:#e9f7f0;color:#0d724a;padding:6px 9px;border-radius:999px;font-size:13px}
     .offer{background:#fff0dc;color:#8a5100}
+    .offer-spotlight{background:#fff8e8;border:1px solid #f2d28a;border-radius:16px;padding:14px;margin:12px 0}.offer-spotlight h3{margin:0 0 8px}.offer-spotlight p{margin:5px 0}
     .offer-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px}.offer-entry button{background:#f9b82e;color:#33240c}.offer-entry span{color:#43544a;font-size:14px}
     .merchant-help{color:#43544a;line-height:1.5;margin:8px 0}.merchant .offer-fields{display:grid;gap:8px;background:#fff9e9;padding:12px;border-radius:12px}
     .account{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:18px 0}
@@ -94,6 +95,7 @@
   <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#directory-title">🏪 Comercios</a><a href="#account-title">👤 Mi cuenta</a></nav>
   <h2 id="products-title">Productos y ofertas de los comercios</h2>
   <div class="offer-entry"><button id="show-offers" type="button">🔥 Ver ofertas</button><span id="offer-count" role="status">Cargando ofertas…</span></div>
+  <div id="offer-spotlight" class="offer-spotlight" hidden></div>
   <div id="category-list" class="category-list" aria-label="Categorías de productos"></div>
   <div id="selected-store" hidden></div>
   <div class="search product-search"><input id="q" type="search" aria-label="Buscar productos" placeholder="Ej: arroz, leche, gaseosa"><button id="search">Buscar</button></div>
@@ -197,7 +199,7 @@
 const SUPABASE_URL='https://kgrnpypzounvgphjdrjg.supabase.co';
 const KEY='sb_publishable_3bnREPlK6nB7l5ISLX5wDg_WdaMYIX_';
 const statusEl=document.getElementById('status'), results=document.getElementById('results');
-let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas";
+let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas", offersRealOnly=false;
 
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
@@ -255,7 +257,7 @@ function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
   let data=rows.filter(x => (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (selectedCategory==='Todas'||x.productos?.categorias?.nombre===selectedCategory) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
-  if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta);
+  if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta && (!offersRealOnly || !/demo/i.test(x.comercios?.nombre||'')));
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   if(document.getElementById('only-recent').checked) {
     const cutoff=Date.now()-7*24*60*60*1000;
@@ -268,6 +270,10 @@ function render() {
   if(document.getElementById('only-favorites').checked) data=data.filter(x=>window.PrecioCercaFavorites?.has(x.productos?.id));
   const realOffers=rows.filter(x=>x.en_oferta && !/demo/i.test(x.comercios?.nombre||''));
   document.getElementById('offer-count').textContent=realOffers.length ? realOffers.length+' '+(realOffers.length===1?'oferta real disponible':'ofertas reales disponibles') : 'Aún no hay ofertas reales publicadas.';
+  const spotlight=document.getElementById('offer-spotlight');
+  spotlight.hidden=!realOffers.length;
+  if(realOffers.length) spotlight.innerHTML='<h3>🔥 Ofertas reales destacadas</h3>'+realOffers.slice(0,3).map(x=>
+    '<p>'+esc(x.productos?.nombre||'Producto')+' · <strong>$'+money(x.precio)+'</strong> en '+esc(x.comercios?.nombre||'Comercio')+'</p>').join('');
   const total=x => Number(x.precio||0)+(x.comercios?.hace_delivery?Number(x.comercios?.costo_delivery||0):0);
   if(sort==='delivery') data.sort((a,b)=>total(a)-total(b));
   if(sort==='price') data.sort((a,b)=>Number(a.precio)-Number(b.precio));
@@ -353,8 +359,9 @@ function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;',
 document.getElementById('search').onclick=render;
 document.getElementById('q').addEventListener('input',render);
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
-document.getElementById('only-offers').addEventListener('change',render);
+document.getElementById('only-offers').addEventListener('change',()=>{offersRealOnly=false;render()});
 document.getElementById('show-offers').addEventListener('click',()=>{
+  offersRealOnly=true;
   document.getElementById('only-offers').checked=true;
   document.getElementById('sort').value='price';
   render();
