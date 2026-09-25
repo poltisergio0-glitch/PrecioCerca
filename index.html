@@ -19,6 +19,7 @@
     .product{font-weight:800;font-size:19px} .store{margin-top:4px;color:#56625c} .price{font-size:25px;font-weight:850;margin-top:12px}
     .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px} .pill{background:#e9f7f0;color:#0d724a;padding:6px 9px;border-radius:999px;font-size:13px}
     .offer{background:#fff0dc;color:#8a5100}
+    .example-toggle{display:flex;align-items:center;gap:8px;margin:12px 0;color:#43544a}.example-toggle input{flex:none;margin:0}.filter-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.filter-actions button{background:#e6f4e9;color:#075a37}.merchant-cta{border-radius:16px;background:#e7f5e9;padding:16px;margin:20px 0}.merchant-cta h2{margin:0 0 6px;font-size:20px}.merchant-cta p{margin:0 0 10px}.merchant-cta a{display:inline-block;background:#118a5a;color:white;padding:11px 15px;border-radius:12px;text-decoration:none;font-weight:700}
     .offer-spotlight{background:#fff8e8;border:1px solid #f2d28a;border-radius:16px;padding:14px;margin:12px 0}.offer-spotlight h3{margin:0 0 8px}.offer-spotlight p{margin:5px 0}
     .offer-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px}.offer-entry button{background:#f9b82e;color:#33240c}.offer-entry span{color:#43544a;font-size:14px}
     .merchant-help{color:#43544a;line-height:1.5;margin:8px 0}.merchant .offer-fields{display:grid;gap:8px;background:#fff9e9;padding:12px;border-radius:12px}
@@ -54,7 +55,7 @@
     .directory{margin:22px 0}.directory h2{font-size:23px}.directory .search input{width:100%}
     .store-card h3{margin:0;font-size:19px}.store-card p{color:#56625c}
     .store-card .contact{margin-right:15px}#selected-store{margin:12px 0}
-    .quick-nav{display:flex;gap:9px;margin:12px 0 18px}.quick-nav a{flex:1;text-align:center;text-decoration:none;border-radius:12px;background:#e0f3e8;color:#086041;font-weight:700;padding:12px 6px}
+    .quick-nav{display:flex;gap:9px;margin:12px 0 18px;flex-wrap:wrap}.quick-nav a{flex:1 1 42%;text-align:center;text-decoration:none;border-radius:12px;background:#e0f3e8;color:#086041;font-weight:700;padding:12px 6px}
     .options{background:#fff;border:1px solid #e0e6e3;border-radius:14px;padding:12px 14px;margin:12px 0}
     .options summary{cursor:pointer;font-weight:700;color:#0d724a}.options select:last-of-type{margin-bottom:4px}
     .sample{background:#fff2dc;color:#875600}
@@ -92,10 +93,11 @@
 <main>
   <div class="hero"><h1>Encontrá el mejor precio cerca tuyo</h1><p>Buscá, compará y elegí dónde comprar.</p></div>
   <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><button id="share-app" type="button">Compartir app</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
-  <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#directory-title">🏪 Comercios</a><a href="#account-title">👤 Mi cuenta</a></nav>
+  <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🛒 Productos</a><a href="#basket-title">🧺 Mi compra</a><a href="#directory-title">🏪 Comercios</a><a href="#account-title">🏪 Publicar</a></nav>
   <h2 id="products-title">Productos y ofertas de los comercios</h2>
   <div class="offer-entry"><button id="show-offers" type="button">🔥 Ver ofertas</button><span id="offer-count" role="status">Cargando ofertas…</span></div>
   <div id="offer-spotlight" class="offer-spotlight" hidden></div>
+  <label class="example-toggle"><input type="checkbox" id="show-examples"> Mostrar comercios de demostración</label>
   <div id="category-list" class="category-list" aria-label="Categorías de productos"></div>
   <div id="selected-store" hidden></div>
   <div class="search product-search"><input id="q" type="search" aria-label="Buscar productos" placeholder="Ej: arroz, leche, gaseosa"><button id="search">Buscar</button></div>
@@ -120,11 +122,12 @@
     <label><input type="checkbox" id="only-recent"> Actualizados en los últimos 7 días</label>
   </div>
   </details>
+  <div class="filter-actions"><button id="clear-filters" type="button">Ver todos los productos</button></div>
   <label id="favorites-filter" hidden><input type="checkbox" id="only-favorites"> Ver solo mis favoritos</label>
   <div id="favorites-message" role="status" aria-live="polite"></div>
   <div id="status">Conectando con la base de datos…</div>
-  <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 ¿Dónde conviene hacer tu compra?</h2><p>Elegí lo que necesitás y compará el total en un solo comercio.</p><div id="basket-content" aria-live="polite"></div></section>
   <section id="results"></section>
+  <section id="basket" class="basket" aria-labelledby="basket-title"><h2 id="basket-title">🧺 ¿Dónde conviene hacer tu compra?</h2><p>Elegí lo que necesitás y compará el total en un solo comercio.</p><div id="basket-content" aria-live="polite"></div></section>
   <button id="basket-jump" type="button" hidden>Comparar mi compra</button>
   <dialog id="store-detail" aria-labelledby="detail-title"><button id="detail-close" type="button">Cerrar ×</button><div id="detail-content"></div></dialog>
   <section class="directory" aria-labelledby="directory-title">
@@ -134,8 +137,9 @@
     <div id="store-results"></div>
   </section>
 
+  <div class="merchant-cta"><h2>¿Tenés un comercio?</h2><p>Publicá productos, precios y ofertas para que los vecinos encuentren tu local.</p><a href="#account-title">Publicar mis productos</a></div>
   <section class="account" aria-labelledby="account-title">
-    <h2 id="account-title">Tu cuenta</h2>
+    <h2 id="account-title">Cuenta del comerciante</h2><p>Para publicar, ingresá o creá una cuenta. Si solo querés comparar precios, podés usar la app sin registrarte.</p>
     <div id="auth-out">
       <form id="auth-form">
         <input id="auth-name" name="name" autocomplete="name" placeholder="Tu nombre (para registrarte)" maxlength="80">
@@ -256,7 +260,7 @@ function renderCategories(){
 function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
-  let data=rows.filter(x => (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (selectedCategory==='Todas'||x.productos?.categorias?.nombre===selectedCategory) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
+  let data=rows.filter(x => (document.getElementById('show-examples').checked || !/demo/i.test(x.comercios?.nombre||'')) && (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (selectedCategory==='Todas'||x.productos?.categorias?.nombre===selectedCategory) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
   if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta && (!offersRealOnly || !/demo/i.test(x.comercios?.nombre||'')));
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   if(document.getElementById('only-recent').checked) {
@@ -282,8 +286,8 @@ function render() {
   if(sort==='name') data.sort((a,b)=>(a.productos?.nombre||'').localeCompare(b.productos?.nombre||''));
   if(!q && sort==='price' && !document.getElementById('only-offers').checked) data.sort((a,b)=>Number(Boolean(b.en_oferta && !/demo/i.test(b.comercios?.nombre||'')))-Number(Boolean(a.en_oferta && !/demo/i.test(a.comercios?.nombre||''))));
   if(!data.length) {
-    statusEl.textContent='Sin resultados con esos filtros.';
-    results.innerHTML='<div class="empty">'+(selectedCategory!=='Todas'?'Todavía no hay productos de '+esc(selectedCategory)+' con esos filtros.':'No encontramos productos con esa búsqueda y esos filtros.')+'</div>';
+    statusEl.textContent=rows.length?'Sin resultados con esos filtros.':'Cargando precios…';
+    results.innerHTML='<div class="empty">'+(!rows.length?'Cargando productos…':selectedCategory!=='Todas'?'Todavía no hay productos de '+esc(selectedCategory)+' con esos filtros.':'No encontramos productos con esa búsqueda y esos filtros. Probá “Ver todos los productos” o activá los comercios de demostración.')+'</div>';
     return;
   }
   const byProduct=new Map();
@@ -360,8 +364,24 @@ document.getElementById('search').onclick=render;
 document.getElementById('q').addEventListener('input',render);
 document.getElementById('q').addEventListener('keydown',e=>{if(e.key==='Enter')render()});
 document.getElementById('only-offers').addEventListener('change',()=>{offersRealOnly=false;render()});
+document.getElementById('show-examples').addEventListener('change',()=>{window.PrecioCercaStores?.clearSelection();window.renderStores?.();render()});
+document.getElementById('clear-filters').addEventListener('click',()=>{
+  document.getElementById('q').value='';
+  document.getElementById('only-offers').checked=false;
+  document.getElementById('only-delivery').checked=false;
+  document.getElementById('only-recent').checked=false;
+  document.getElementById('only-favorites').checked=false;
+  document.getElementById('sort').value='price';
+  document.getElementById('radius').value='all';
+  selectedCategory='Todas';offersRealOnly=false;
+  window.PrecioCercaStores?.clearSelection();
+  renderCategories();render();
+});
 document.getElementById('show-offers').addEventListener('click',()=>{
   offersRealOnly=true;
+  document.getElementById('show-examples').checked=false;
+  window.PrecioCercaStores?.clearSelection();
+  window.renderStores?.();
   document.getElementById('only-offers').checked=true;
   document.getElementById('sort').value='price';
   render();
@@ -421,7 +441,7 @@ window.addEventListener('preciocerca:favorites-updated',render);
 load();
 loadCategories();
 </script>
-<script src="stores.js?v=4" defer></script>
+<script src="stores.js?v=5" defer></script>
 <script src="auth.js?v=2" defer></script>
 <script src="merchant.js?v=3" defer></script>
 <script src="favorites.js" defer></script>
