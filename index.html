@@ -22,7 +22,7 @@
     .example-toggle{display:flex;align-items:center;gap:8px;margin:12px 0;color:#43544a}.example-toggle input{flex:none;margin:0}.filter-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.filter-actions button{background:#e6f4e9;color:#075a37}.merchant-cta{border-radius:16px;background:#e7f5e9;padding:16px;margin:20px 0}.merchant-cta h2{margin:0 0 6px;font-size:20px}.merchant-cta p{margin:0 0 10px}.merchant-cta a{display:inline-block;background:#118a5a;color:white;padding:11px 15px;border-radius:12px;text-decoration:none;font-weight:700}
     .offer-spotlight{background:#fff8e8;border:1px solid #f2d28a;border-radius:16px;padding:14px;margin:12px 0}.offer-spotlight h3{margin:0 0 8px}.offer-spotlight p{margin:5px 0}
     .offer-entry{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 6px}.offer-entry button{background:#f9b82e;color:#33240c}.offer-entry span{color:#43544a;font-size:14px}
-    .merchant .new-product-fields{display:grid;gap:9px}.merchant .new-product-fields[hidden]{display:none}.merchant-help{color:#43544a;line-height:1.5;margin:8px 0}.merchant .offer-fields{display:grid;gap:8px;background:#fff9e9;padding:12px;border-radius:12px}
+    .merchant-products{margin:16px 0}.merchant-products h3{margin:0 0 8px}.merchant-products .card{padding:12px}.merchant-products button{margin:6px 7px 2px 0}.merchant-products .secondary{background:#e9f7f0;color:#0d724a}.merchant-products select{width:100%;margin:0}.merchant .new-product-fields{display:grid;gap:9px}.merchant .new-product-fields[hidden]{display:none}.merchant-help{color:#43544a;line-height:1.5;margin:8px 0}.merchant .offer-fields{display:grid;gap:8px;background:#fff9e9;padding:12px;border-radius:12px}
     .account{background:white;border:1px solid #e0e6e3;border-radius:16px;padding:16px;margin:18px 0}
     .account h2{margin:0 0 12px;font-size:20px}.account form{display:grid;gap:9px}
     .account input{width:100%}.account .actions{display:flex;flex-wrap:wrap;gap:8px}
@@ -174,7 +174,13 @@
       <input id="merchant-edit-delivery-cost" type="number" min="0" step="0.01" placeholder="Costo de delivery en pesos">
       <button id="merchant-edit-save" type="submit">Guardar cambios del local</button>
     </form>
-    <h3>Publicar productos y ofertas</h3>
+    <section id="merchant-products" class="merchant-products" aria-labelledby="merchant-products-title">
+    <h3 id="merchant-products-title">Mis productos</h3>
+    <p>Actualizá precios, stock y ofertas sin volver a cargar todo. Pausar oculta el producto a los compradores; podés reactivarlo al editar su stock.</p>
+    <select id="merchant-manage-store" aria-label="Filtrar mis productos por local"><option value="">Todos mis locales</option></select>
+    <div id="merchant-products-list" role="status">Cargando tus productos…</div>
+    </section>
+    <h3 id="merchant-price-title">Publicar productos y ofertas</h3>
     <p class="merchant-help">Elegí tu comercio y un producto existente, o creá uno nuevo. Cargá su precio y stock. Para anunciar una oferta, marcá “Publicar como oferta” y agregá el precio anterior.</p>
     <form id="merchant-price-form">
       <select id="merchant-store" required><option value="">Elegí un local</option></select>
@@ -194,7 +200,9 @@
       <input id="merchant-stock" type="number" min="0" step="1" placeholder="Unidades disponibles" required>
       <div class="offer-fields"><label><input id="merchant-offer" type="checkbox"> Publicar como oferta</label>
       <label for="merchant-previous-price">Precio anterior (para mostrar cuánto ahorra el comprador)</label>
-      <input id="merchant-previous-price" type="number" min="0" step="0.01" placeholder="Ej.: 4500" disabled></div>
+      <input id="merchant-previous-price" type="number" min="0" step="0.01" placeholder="Ej.: 4500" disabled>
+      <label for="merchant-offer-until">Oferta válida hasta</label>
+      <input id="merchant-offer-until" type="datetime-local" disabled></div>
       <button id="merchant-price-save" type="submit">Publicar producto o actualizar precio</button>
     </form>
     <div id="merchant-message" role="status" aria-live="polite"></div>
@@ -209,7 +217,7 @@ let rows=[], categoryNames=[], userLocation=null, selectedCategory="Todas", offe
 async function load() {
   statusEl.textContent='Conectando con la base de datos…';
   try {
-    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,stock,imagen,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,descripcion,telefono,horario,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
+    const url=SUPABASE_URL+'/rest/v1/precios?select=precio,precio_anterior,en_oferta,oferta_hasta,stock,imagen,actualizado_at,productos(id,nombre,marca,imagen,categorias(nombre)),comercios(id,nombre,descripcion,telefono,horario,hace_delivery,costo_delivery,whatsapp,direccion,latitud,longitud)&stock=gt.0';
     const r=await fetch(url,{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
     if(!r.ok) throw new Error(await r.text());
     rows=await r.json();
@@ -262,7 +270,7 @@ function render() {
   const q=document.getElementById('q').value.trim().toLowerCase();
   const sort=document.getElementById('sort').value;
   let data=rows.filter(x => (document.getElementById('show-examples').checked || !/demo/i.test(x.comercios?.nombre||'')) && (!window.selectedStoreId || x.comercios?.id===window.selectedStoreId) && (selectedCategory==='Todas'||x.productos?.categorias?.nombre===selectedCategory) && (!q || ((x.productos?.nombre||'')+' '+(x.productos?.marca||'')).toLowerCase().includes(q)));
-  if(document.getElementById('only-offers').checked) data=data.filter(x=>x.en_oferta && (!offersRealOnly || !/demo/i.test(x.comercios?.nombre||'')));
+  if(document.getElementById('only-offers').checked) data=data.filter(x=>offerActive(x) && (!offersRealOnly || !/demo/i.test(x.comercios?.nombre||'')));
   if(document.getElementById('only-delivery').checked) data=data.filter(x=>x.comercios?.hace_delivery);
   if(document.getElementById('only-recent').checked) {
     const cutoff=Date.now()-7*24*60*60*1000;
@@ -273,7 +281,7 @@ function render() {
   if(userLocation && radius!=='all') data=data.filter(x=>distance(x)<=Number(radius));
   if(!userLocation && (radius!=='all'||sort==='distance')) document.getElementById('distance-status').textContent='Tocá “Usar mi ubicación” para aplicar la distancia.';
   if(document.getElementById('only-favorites').checked) data=data.filter(x=>window.PrecioCercaFavorites?.has(x.productos?.id));
-  const realOffers=rows.filter(x=>x.en_oferta && !/demo/i.test(x.comercios?.nombre||''));
+  const realOffers=rows.filter(x=>offerActive(x) && !/demo/i.test(x.comercios?.nombre||''));
   document.getElementById('offer-count').textContent=realOffers.length ? realOffers.length+' '+(realOffers.length===1?'oferta real disponible':'ofertas reales disponibles') : 'Aún no hay ofertas reales publicadas.';
   const spotlight=document.getElementById('offer-spotlight');
   spotlight.hidden=!realOffers.length;
@@ -318,10 +326,10 @@ function render() {
       ${!safeImage(x.imagen||x.productos?.imagen)?'<div class="visual-note">Ilustración · el comercio aún no cargó foto</div>':''}
       <div class="price">${money(x.precio)}</div>
       <button type="button" class="open-details" data-open-details="true">Ver comercio y cómo llegar</button>
-      ${x.en_oferta&&x.precio_anterior!=null&&Number(x.precio_anterior)>Number(x.precio)?
+      ${offerActive(x)&&x.precio_anterior!=null&&Number(x.precio_anterior)>Number(x.precio)?
         '<div class="previous-price">Antes <s>$'+money(x.precio_anterior)+'</s> Ahorrás $'+money(Number(x.precio_anterior)-Number(x.precio))+'</div>':''}
       <div class="meta">
-        ${x.en_oferta?'<span class="pill offer">Oferta</span>':''}
+        ${offerActive(x)?'<span class="pill offer">Oferta hasta '+esc(new Date(x.oferta_hasta).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'}))+'</span>':''}
         ${/demo/i.test(x.comercios?.nombre||'')?'<span class="pill sample">Datos de ejemplo</span>':''}
         ${group.items.length>1&&Number(x.precio)===group.min?'<span class="pill best-price">Menor precio</span>':''}
         <span class="pill">Stock: ${x.stock??0}</span>
@@ -351,6 +359,7 @@ function mapsUrl(store){
   const params=new URLSearchParams({api:'1',destination,travelmode:'driving',dir_action:'navigate'});
   return 'https://www.google.com/maps/dir/?'+params.toString();
 }
+function offerActive(row){return Boolean(row.en_oferta && row.oferta_hasta && new Date(row.oferta_hasta).getTime()>Date.now())}
 function updatedLabel(value){
   if(!value)return '';
   const date=new Date(value);
@@ -444,7 +453,7 @@ loadCategories();
 </script>
 <script src="stores.js?v=6" defer></script>
 <script src="auth.js?v=2" defer></script>
-<script src="merchant.js?v=4" defer></script>
+<script src="merchant.js?v=5" defer></script>
 <script src="favorites.js" defer></script>
 <script src="shopping-list.js?v=4" defer></script>
 <script src="store-details.js?v=2" defer></script>
