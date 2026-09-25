@@ -81,7 +81,9 @@
   });
   async function refresh() {
     const session = await window.PrecioCercaAuth.getSession();
+    const wasHidden = $('merchant-panel').hidden;
     $('merchant-panel').hidden = !session;
+    if (session && wasHidden) $('merchant-panel').open = true;
     if (!session) { stores = []; ownPrices = []; priceRequest++; $('merchant-products-list').textContent='Ingresá para ver tus productos.'; $('merchant-edit-store').value = ''; fillEditForm(); return; }
     try {
       const prior = $('merchant-store').value;
