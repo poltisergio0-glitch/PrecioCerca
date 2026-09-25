@@ -2,11 +2,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const url = Deno.env.get('SUPABASE_URL');
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const cors = { 'Access-Control-Allow-Origin': 'https://poltisergio0-glitch.github.io',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS' };
 const json = (status: number, body: object) => new Response(JSON.stringify(body), {
-  status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+  status, headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 });
 
 Deno.serve(async (request) => {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (request.method !== 'POST') return json(405, { error: 'Usá POST.' });
   const token = /^Bearer (.+)$/i.exec(request.headers.get('Authorization') || '')?.[1];
   if (!url || !serviceKey) return json(503, { error: 'Servicio no configurado.' });
