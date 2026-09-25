@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <title>PrecioCerca</title>
+  <title>Ofertas Serca</title>
   <style>
     *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:linear-gradient(180deg,rgba(250,252,248,.76),#f5f7f6 720px),url('assets/preciocerca-background.webp') center 60px / auto 570px no-repeat;color:#17201c}
     header{background:#118a5a;color:white;padding:22px 18px} .brand{font-size:25px;font-weight:800} .tag{opacity:.9}
@@ -80,11 +80,11 @@
   </style>
 </head>
 <body>
-<header><div class="brand">PrecioCerca</div><div class="tag">Compará antes de comprar</div></header>
+<header><div class="brand">Ofertas Serca</div><div class="tag">Compará antes de comprar</div></header>
 <main>
   <div class="hero"><h1>Encontrá ofertas cerca tuyo</h1><p>Buscá productos, compará precios y conocé los comercios de tu zona.</p><p><a class="hero-link" href="#account-title">Tengo un comercio · publicar mi oferta</a></p></div>
-  <p class="merchant-help">PrecioCerca está empezando en La Calera. Los precios los publican quienes administran cada cuenta comercial: confirmá precio y disponibilidad con el local antes de ir.</p>
-  <div class="install"><button id="install-app" type="button">Instalar PrecioCerca</button><button id="share-app" type="button">Compartir app</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
+  <p class="merchant-help">Ofertas Serca está empezando en La Calera. Los precios los publican quienes administran cada cuenta comercial: confirmá precio y disponibilidad con el local antes de ir.</p>
+  <div class="install"><button id="install-app" type="button">Instalar Ofertas Serca</button><button id="share-app" type="button">Compartir app</button><span id="install-message" role="status" aria-live="polite">Tenela a mano en la pantalla de inicio.</span></div>
   <nav class="quick-nav" aria-label="Ir a una sección"><a href="#products-title">🔥 Ofertas y precios</a><a href="#directory-title">🏪 Comercios</a><a href="#account-title">＋ Publicar</a></nav>
   <h2 id="products-title">Productos y ofertas de los comercios</h2>
   <div class="offer-entry"><button id="show-offers" type="button">🔥 Ver ofertas</button><span id="offer-count" role="status">Cargando ofertas…</span></div>
@@ -423,17 +423,17 @@ document.getElementById('install-app').addEventListener('click', async () => {
 });
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-app').hidden=true;
-  document.getElementById('install-message').textContent='PrecioCerca instalada.';
+  document.getElementById('install-message').textContent='Ofertas Serca instalada.';
 });
 if(window.matchMedia('(display-mode: standalone)').matches){
   document.getElementById('install-app').hidden=true;
-  document.getElementById('install-message').textContent='PrecioCerca instalada.';
+  document.getElementById('install-message').textContent='Ofertas Serca instalada.';
 }
 document.getElementById('share-app').addEventListener('click',async()=>{
   const url=new URL('./',location.href).href;
   const info=document.getElementById('install-message');
   if(navigator.share){
-    try{await navigator.share({title:'PrecioCerca',text:'Compará precios en comercios cercanos',url});return}
+    try{await navigator.share({title:'Ofertas Serca',text:'Compará precios en comercios cercanos',url});return}
     catch(error){if(error.name==='AbortError')return}
   }
   try{await navigator.clipboard.writeText(url);info.textContent='Enlace copiado. Pegalo en WhatsApp para compartir.'}
@@ -442,8 +442,8 @@ document.getElementById('share-app').addEventListener('click',async()=>{
 document.getElementById('invite-store').addEventListener('click',async()=>{
   const url=new URL('./#account-title',location.href).href;
   const info=document.getElementById('install-message');
-  const message='¡Sumá tu comercio a PrecioCerca! Publicá gratis tus productos, precios y ofertas para que te encuentren cerca tuyo.';
-  if(navigator.share){try{await navigator.share({title:'Publicar en PrecioCerca',text:message,url});return}catch(error){if(error.name==='AbortError')return}}
+  const message='¡Sumá tu comercio a Ofertas Serca! Publicá gratis tus productos, precios y ofertas para que te encuentren cerca tuyo.';
+  if(navigator.share){try{await navigator.share({title:'Publicar en Ofertas Serca',text:message,url});return}catch(error){if(error.name==='AbortError')return}}
   try{await navigator.clipboard.writeText(message+' '+url);info.textContent='Invitación copiada. Pegala en WhatsApp.'}
   catch{info.textContent='Compartí este enlace con un comercio: '+url}
 });
