@@ -60,6 +60,7 @@
     $('merchant-stock').value = '';
     $('merchant-previous-price').value = '';
     $('merchant-offer').checked = false;
+    syncOfferFields();
     $('merchant-product-name').value = '';
     $('merchant-brand').value = '';
     $('merchant-image').value = '';
@@ -95,6 +96,7 @@
         $('merchant-price').value = row.precio;
         $('merchant-stock').value = row.stock ?? 0;
         $('merchant-offer').checked = Boolean(row.en_oferta);
+        syncOfferFields();
         $('merchant-previous-price').value = row.en_oferta && row.precio_anterior != null &&
           Number(row.precio_anterior) > Number(row.precio) ? row.precio_anterior : '';
         status.textContent = 'Precio encontrado. Podés cambiarlo y guardar.';
@@ -106,6 +108,11 @@
       message(error.message);
     }
   }
+  function syncOfferFields() {
+    $('merchant-previous-price').disabled = !$('merchant-offer').checked;
+    if (!$('merchant-offer').checked) $('merchant-previous-price').value = '';
+  }
+  $('merchant-offer').addEventListener('change', syncOfferFields);
   $('merchant-store').addEventListener('change', fillExistingPrice);
   $('merchant-product').addEventListener('change', fillExistingPrice);
   $('merchant-edit-store').addEventListener('change', fillEditForm);
@@ -287,7 +294,7 @@
       $('merchant-category').disabled = false;
       await refresh();
       $('merchant-store').value = storeId;
-      message('Precio guardado. Ya aparece en la búsqueda.');
+      message(offer ? 'Oferta publicada. Ya aparece en la búsqueda de ofertas.' : 'Producto y precio publicados. Ya aparecen en la búsqueda.');
       window.dispatchEvent(new Event('preciocerca:prices-updated'));
     } catch (error) { message(error.message); }
     finally { button.disabled = false; }
