@@ -5,7 +5,7 @@
   function renderStores() {
     const q = $('store-q').value.trim().toLocaleLowerCase('es-AR');
     const shown = stores.filter(store =>
-      (store.nombre + ' ' + (store.direccion || '')).toLocaleLowerCase('es-AR').includes(q));
+      ($('show-examples').checked || !/demo/i.test(store.nombre)) && (store.nombre + ' ' + (store.direccion || '')).toLocaleLowerCase('es-AR').includes(q));
     if (userLocation) shown.sort((a, b) =>
       kmTo(a.latitud, a.longitud) - kmTo(b.latitud, b.longitud));
     $('store-status').textContent = shown.length + ' ' +
@@ -64,6 +64,7 @@
     $('selected-store').append(clear);
   }
   function showProducts(storeId) {
+    if (!stores.some(store => store.id === storeId && ($('show-examples').checked || !/demo/i.test(store.nombre)))) return;
     window.selectedStoreId = storeId;
     $('q').value = '';
     selectedCategory = 'Todas';
@@ -76,7 +77,7 @@
     const button = event.target.closest('[data-store-id]');
     if (button) showProducts(button.dataset.storeId);
   });
-  window.PrecioCercaStores = { showProducts };
+  window.PrecioCercaStores = { showProducts, clearSelection: () => {window.selectedStoreId=null;showSelected();render()} };
   window.renderStores = renderStores;
   window.loadStores = loadStores;
   loadStores();
