@@ -67,6 +67,7 @@
     if (!rows.length) {
       container.innerHTML = statusEl.textContent === 'No se pudo consultar la base de datos.' ?
         '<p>No pudimos actualizar los precios. Revisá tu conexión y recargá la app.</p>' :
+        pricesLoaded ? '<p>Todavía no hay productos disponibles para comparar.</p>' :
         '<p>Cargando precios para comparar tu compra…</p>';
       return;
     }
