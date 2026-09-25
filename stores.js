@@ -67,6 +67,11 @@
     if (!stores.some(store => store.id === storeId && ($('show-examples').checked || !/demo/i.test(store.nombre)))) return;
     window.selectedStoreId = storeId;
     $('q').value = '';
+    $('only-offers').checked = false;
+    $('only-delivery').checked = false;
+    $('only-recent').checked = false;
+    $('only-favorites').checked = false;
+    $('radius').value = 'all';
     selectedCategory = 'Todas';
     renderCategories();
     showSelected(); render();
